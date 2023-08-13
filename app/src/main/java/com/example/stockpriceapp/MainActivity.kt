@@ -115,7 +115,7 @@ fun LoginScreen(navController: NavController){
                                 when (result) {
                                     is Result.Success -> {
                                         val refreshTokenResultAdapter = moshi.adapter(resultRefreshToken::class.java)
-                                        val data = result.get()
+                                        val data = response
 
                                         //変数refreshTokenにAPIから返ってきたrefreshTokenを格納する
 //                                        val refreshToken = refreshTokenResultAdapter.fromJson(data)
