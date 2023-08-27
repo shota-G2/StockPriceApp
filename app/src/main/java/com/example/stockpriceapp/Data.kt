@@ -9,6 +9,6 @@ data class resultRefreshToken(
     val refreshToken: String
 )
 
-class RefreshTokenStock {
-    lateinit var refreshToken: String
-}
+data class resultIdToken(
+    val idToken: String
+)
