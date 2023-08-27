@@ -56,7 +56,14 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "loginScreen" ){
                 composable("loginScreen"){LoginScreen(navController)}
-                composable("watchListScreen"){WatchListScreen(navController)}
+                composable("watchListScreen/{idToken}",
+                    arguments = listOf(
+                        navArgument("idToken"){ type = NavType.StringType}
+                    )
+                ){ backStackEntry ->
+                    val idToken = backStackEntry.arguments?.getString("idToken") ?: ""
+                    WatchListScreen(navController)
+                }
                 composable("serchScreen"){ SerchScreen(navController)}
             }
         }
@@ -135,7 +142,7 @@ fun LoginScreen(navController: NavController){
                                                         val res = String(idResponse.body().toByteArray())
                                                         val idToken = idTokenResultAdapter.fromJson(res)?.idToken
 
-                                                        navController.navigate("watchListScreen")
+                                                        navController.navigate("watchListScreen/$idToken")
 
                                                     }
                                                     is Result.Failure -> {
