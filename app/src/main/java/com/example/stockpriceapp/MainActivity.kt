@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                     )
                 ){ backStackEntry ->
                     val idToken = backStackEntry.arguments?.getString("idToken") ?: ""
-                    WatchListScreen(navController)
+                    WatchListScreen(navController, idToken)
                 }
                 composable("serchScreen"){ SerchScreen(navController)}
             }

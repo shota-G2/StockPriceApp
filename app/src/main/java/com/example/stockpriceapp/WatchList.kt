@@ -48,6 +48,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
+import com.github.kittinunf.fuel.Fuel
+import com.google.android.gms.cast.RequestData
+import kotlinx.coroutines.runBlocking
 
 class WatchList : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,14 +61,14 @@ class WatchList : ComponentActivity() {
     }
 }
 
-class IndexDataViewModel: ViewModel() {
-    val RepuestIndexData = RequestIndexData().RequestData()
-    val indexData = MutableLiveData(RepuestIndexData)
-    val indexList = indexData.value
-}
+//class IndexDataViewModel(idToken: String): ViewModel() {
+//    val RepuestIndexData = RequestIndexData().RequestData(idToken)
+//    val indexData = MutableLiveData(RepuestIndexData)
+//    val indexList = indexData.value
+//}
 
 @Composable
-fun WatchListScreen(navController: NavController) {
+fun WatchListScreen(navController: NavController, idToken: String = "idToken") {
     StockPriceAppTheme {
         //A surface container using the 'background' color from the theme
         Surface(
@@ -77,7 +80,7 @@ fun WatchListScreen(navController: NavController) {
                     .background(Color.Black)
             ) {
                 TopBar("ウォッチリスト")
-                WatchList(navController)
+                WatchList(navController, idToken)
                 MainMenu(navController)
             }
         }
@@ -104,7 +107,7 @@ fun TopBar(text: String){
 }
 
 @Composable
-fun WatchList(navController: NavController) {
+fun WatchList(navController: NavController, idToken: String) {
 
     Row(
         modifier = Modifier
@@ -122,8 +125,13 @@ fun WatchList(navController: NavController) {
         }
     }
 
-    val viewModel: IndexDataViewModel = viewModel()
-    val indexList = viewModel.indexList!!
+//    val viewModel: IndexDataViewModel = viewModel()
+//    val indexList = viewModel.indexList!!
+
+
+    val indexList = RequestIndexData().RequestData(idToken)
+
+
 
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
@@ -227,11 +235,11 @@ fun MainMenu(navController: NavController){
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun WatchListScreenPreview() {
-    val navController = rememberNavController()
-    StockPriceAppTheme {
-        WatchListScreen(navController)
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun WatchListScreenPreview() {
+//    val navController = rememberNavController()
+//    StockPriceAppTheme {
+//        WatchListScreen(navController)
+//    }
+//}
