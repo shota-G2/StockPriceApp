@@ -22,10 +22,11 @@ import kotlin.coroutines.suspendCoroutine
 
 class RequestIndexData {
 
-    fun RequestData(idToken: String): List<String> {
+    fun RequestData(idToken: String): Pair<List<String>, List<String>> {
 
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-        var indexdata = listOf("")
+        val indexName = mutableListOf("")
+        val indexClose = mutableListOf("")
         val header = mapOf("Authorization" to idToken)
 
         runBlocking {
@@ -35,22 +36,19 @@ class RequestIndexData {
                 .awaitStringResponseResult()
             result.fold(
                 { data ->
-
+                    indexName.remove(indexName[0])
+                    indexClose.remove(indexClose[0])
+                    val DailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
                     val res = String(response.body().toByteArray())
+                    val data = DailyQuotesAdapter.fromJson(res)
+                    val dataQuotes = data?.daily_quotes
 
-                    indexdata = listOf(
-                        "日経平均",
-                        "TOPIX",
-                        "NYダウ",
-                        "S＆P",
-                        "ドル円",
-                        "千葉銀行",
-                        "AGC",
-                        "大日本印刷",
-                        "三菱UFJ銀行",
-                        "SMBC",
-                        "みずほ銀行"
-                    )
+                    if (dataQuotes != null) {
+                        for (i in dataQuotes.indices) {
+                            indexName.add(dataQuotes[i].Code)
+                            indexClose.add(dataQuotes[i].Close.toString())
+                        }
+                    }
                 },
                 { error ->
 
@@ -58,6 +56,6 @@ class RequestIndexData {
             )
         }
 
-        return indexdata
+        return indexName to indexClose
         }
     }

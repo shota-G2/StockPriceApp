@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -129,20 +130,18 @@ fun WatchList(navController: NavController, idToken: String) {
 //    val indexList = viewModel.indexList!!
 
 
-    val indexList = RequestIndexData().RequestData(idToken)
-
-
+    val (indexName, indexClose) = RequestIndexData().RequestData(idToken)
 
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
         .size(650.dp)
     ) {
-        items(indexList){ indexList ->
+        itemsIndexed(indexName){ indexNum, indexName ->
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
             ){
-                Box(){
+                Box {
                     Image(painter = painterResource(id = R.drawable.wine),
                         contentDescription = null,
                         contentScale = ContentScale.FillBounds,
@@ -152,22 +151,23 @@ fun WatchList(navController: NavController, idToken: String) {
                             .size(70.dp)
                     )
 
-                    Column() {
-                        Text(text = indexList,
+                    Column {
+                        Text(text = indexName,
                             fontSize = 20.sp,
                             color = Color.White,
                             modifier = Modifier
                                 .padding(start = 15.dp, top = 15.dp)
                         )
 
-                        Row() {
+                        Row {
                             Text("前日終値",
                                 fontSize = 15.sp,
                                 color = Color.White,
                                 modifier = Modifier
                                     .padding(start = 15.dp)
                             )
-                            Text("3,0000.00",
+
+                            Text(indexClose[indexNum],
                                 fontSize = 25.sp,
                                 color = Color.White,
                                 modifier = Modifier
@@ -235,11 +235,11 @@ fun MainMenu(navController: NavController){
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun WatchListScreenPreview() {
-//    val navController = rememberNavController()
-//    StockPriceAppTheme {
-//        WatchListScreen(navController)
-//    }
-//}
+@Preview(showBackground = true)
+@Composable
+fun WatchListScreenPreview() {
+    val navController = rememberNavController()
+    StockPriceAppTheme {
+        WatchListScreen(navController)
+    }
+}
