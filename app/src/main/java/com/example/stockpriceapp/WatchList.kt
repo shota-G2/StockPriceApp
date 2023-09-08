@@ -1,8 +1,10 @@
 package com.example.stockpriceapp
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -68,6 +71,7 @@ class WatchList : ComponentActivity() {
 //    val indexList = indexData.value
 //}
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WatchListScreen(navController: NavController, idToken: String = "idToken") {
     StockPriceAppTheme {
@@ -107,6 +111,7 @@ fun TopBar(text: String){
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WatchList(navController: NavController, idToken: String) {
 
@@ -129,14 +134,26 @@ fun WatchList(navController: NavController, idToken: String) {
 //    val viewModel: IndexDataViewModel = viewModel()
 //    val indexList = viewModel.indexList!!
 
-
-    val (indexName, indexClose) = RequestIndexData().RequestData(idToken)
+    val requestIndexData = RequestIndexData(idToken)
+    val indexClose = requestIndexData.RequestData()
+    val companyName = requestIndexData.RequestCompanyName()
+    val referenceDate = requestIndexData.referenceDate
+    Column(modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.End
+    ){
+        Text(text = "(基準日:$referenceDate)",
+            fontSize = 10.sp,
+            color = Color.White,
+//            modifier = Modifier
+//                .padding(start = 300.dp)
+        )
+    }
 
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
-        .size(650.dp)
+        .size(600.dp)
     ) {
-        itemsIndexed(indexName){ indexNum, indexName ->
+        itemsIndexed(companyName){ indexNum, companyName ->
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -148,12 +165,12 @@ fun WatchList(navController: NavController, idToken: String) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 10.dp, start = 10.dp, end = 10.dp,)
-                            .size(70.dp)
+                            .size(130.dp)
                     )
 
                     Column {
-                        Text(text = indexName,
-                            fontSize = 20.sp,
+                        Text(text = companyName,
+                            fontSize = 15.sp,
                             color = Color.White,
                             modifier = Modifier
                                 .padding(start = 15.dp, top = 15.dp)
@@ -198,13 +215,14 @@ fun MainMenu(navController: NavController){
     val fontSize = 15.sp
     Row(modifier = Modifier
         .fillMaxWidth()
-        .background(Color.Black),
+        .background(Color.Black)
+        .size(70.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
 
         val textColor = Color.White
 
-        TextButton(onClick = { /*TODO*/ },
+        TextButton(onClick = { navController.navigate("watchListScreen") },
         ) {
             Text("ウォッチリスト",
                 color = textColor,
@@ -218,14 +236,14 @@ fun MainMenu(navController: NavController){
                 fontSize = fontSize
             )
         }
-        TextButton(onClick = { /*TODO*/ },
+        TextButton(onClick = { navController.navigate("loginScreen") },
         ) {
-            Text("ポートフォリオ",
+            Text("サインアウト",
                 color = textColor,
                 fontSize = fontSize
             )
         }
-        TextButton(onClick = { /*TODO*/ },
+        TextButton(onClick = {  },
         ) {
             Text("まなぶ",
                 color = textColor,
@@ -235,6 +253,7 @@ fun MainMenu(navController: NavController){
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun WatchListScreenPreview() {

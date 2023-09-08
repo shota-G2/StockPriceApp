@@ -6,6 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -14,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,7 +47,7 @@ fun SerchScreen(navController: NavController){
                     .fillMaxSize()
             ) {
                 TopBar("検索")
-                SerchCompose(navController)
+                SerchList(navController)
                 MainMenu(navController)
             }
         }
@@ -51,14 +55,12 @@ fun SerchScreen(navController: NavController){
 }
 
 @Composable
-fun SerchCompose(navController: NavController){
-    Column() {
-        Text("遷移できたーーーーー",
-            color = Color.White
-        )
-        Button(onClick = { navController.navigate("loginScreen") }) {
-            Text("戻る")
-        }
+fun SerchList(navController: NavController){
+    LazyColumn(modifier = Modifier
+        .fillMaxWidth()
+        .size(650.dp)
+    ) {
+
     }
 }
 

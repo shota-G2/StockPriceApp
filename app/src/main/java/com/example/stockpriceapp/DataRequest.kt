@@ -1,8 +1,9 @@
 package com.example.stockpriceapp
-
+import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.coroutines.awaitStringResponse
 import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
@@ -17,45 +18,77 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class RequestIndexData {
+@RequiresApi(Build.VERSION_CODES.O)
+class RequestIndexData(val idToken: String) {
+    val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+    val header = mapOf("Authorization" to idToken)
 
-    fun RequestData(idToken: String): Pair<List<String>, List<String>> {
+    val today = LocalDateTime.now()
+    val referenceDateData = today.minusDays(84)
+    val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
+    val referenceDate = referenceDateData.format(dtFormat)
 
-        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-        val indexName = mutableListOf("")
+    fun RequestData(): List<String> {
         val indexClose = mutableListOf("")
-        val header = mapOf("Authorization" to idToken)
 
         runBlocking {
-            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=20230324"
+            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$referenceDate"
                 .httpGet()
                 .header(header)
                 .awaitStringResponseResult()
             result.fold(
-                { data ->
-                    indexName.remove(indexName[0])
-                    indexClose.remove(indexClose[0])
-                    val DailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
+                {   indexClose.remove(indexClose[0])
+                    val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
                     val res = String(response.body().toByteArray())
-                    val data = DailyQuotesAdapter.fromJson(res)
+                    val data = dailyQuotesAdapter.fromJson(res)
                     val dataQuotes = data?.daily_quotes
 
                     if (dataQuotes != null) {
                         for (i in dataQuotes.indices) {
-                            indexName.add(dataQuotes[i].Code)
                             indexClose.add(dataQuotes[i].Close.toString())
                         }
                     }
                 },
-                { error ->
+                {
 
                 }
             )
         }
-
-        return indexName to indexClose
-        }
+        return indexClose
     }
+
+    fun RequestCompanyName(): List<String> {
+        val companyName = mutableListOf("")
+
+        runBlocking {
+            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=$referenceDate"
+                .httpGet()
+                .header(header)
+                .awaitStringResponseResult()
+            result.fold(
+                {   companyName.remove(companyName[0])
+                    val infoAdapter = moshi.adapter(Info::class.java)
+                    val res = String(response.body().toByteArray())
+                    val data = infoAdapter.fromJson(res)
+                    val info = data?.info
+
+                    if (info != null) {
+                        for (i in info.indices) {
+                            companyName.add(info[i].CompanyName)
+                        }
+                    }
+                },
+                {
+
+                }
+            )
+        }
+        return companyName
+    }
+}

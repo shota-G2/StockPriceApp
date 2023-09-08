@@ -35,8 +35,21 @@ data class DailyQuotesData(
     val AdjustmentVolume: Float?
 )
 
-data class DataList (
-    val indexName: MutableList<String>,
-    val indexClose: MutableList<String>
+data class Info (
+    val info: List<InfoData>
+)
+
+data class InfoData(
+    val Date: String,
+    val Code: String,
+    val CompanyName: String,
+    val CompanyNameEnglish:String,
+    val Sector17Code: String,
+    val Sector17CodeName: String,
+    val Sector33Code: String,
+    val Sector33CodeName: String,
+    val ScaleCategory: String,
+    val MarketCode: String,
+    val MarketCodeName: String,
 )
 
