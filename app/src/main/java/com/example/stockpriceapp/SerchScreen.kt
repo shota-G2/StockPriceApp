@@ -58,7 +58,7 @@ fun SerchScreen(navController: NavController){
 fun SerchList(navController: NavController){
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
-        .size(650.dp)
+        .size(693.dp)
     ) {
 
     }

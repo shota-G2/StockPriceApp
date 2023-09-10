@@ -38,7 +38,8 @@ class RequestIndexData(val idToken: String) {
         val indexClose = mutableListOf("")
 
         runBlocking {
-            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$referenceDate"
+//            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$referenceDate"
+            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=20230612"
                 .httpGet()
                 .header(header)
                 .awaitStringResponseResult()
@@ -67,7 +68,8 @@ class RequestIndexData(val idToken: String) {
         val companyName = mutableListOf("")
 
         runBlocking {
-            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=$referenceDate"
+//            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=$referenceDate"
+            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=20230612"
                 .httpGet()
                 .header(header)
                 .awaitStringResponseResult()

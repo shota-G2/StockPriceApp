@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -138,6 +139,7 @@ fun WatchList(navController: NavController, idToken: String) {
     val indexClose = requestIndexData.RequestData()
     val companyName = requestIndexData.RequestCompanyName()
     val referenceDate = requestIndexData.referenceDate
+
     Column(modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End
     ){
@@ -151,7 +153,7 @@ fun WatchList(navController: NavController, idToken: String) {
 
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
-        .size(600.dp)
+        .size(630.dp)
     ) {
         itemsIndexed(companyName){ indexNum, companyName ->
             Row(verticalAlignment = Alignment.CenterVertically,
@@ -165,15 +167,18 @@ fun WatchList(navController: NavController, idToken: String) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 10.dp, start = 10.dp, end = 10.dp,)
-                            .size(130.dp)
+                            .size(65.dp)
                     )
 
                     Column {
+
                         Text(text = companyName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             fontSize = 15.sp,
                             color = Color.White,
                             modifier = Modifier
-                                .padding(start = 15.dp, top = 15.dp)
+                                .padding(start = 15.dp, top = 15.dp),
                         )
 
                         Row {
@@ -185,7 +190,7 @@ fun WatchList(navController: NavController, idToken: String) {
                             )
 
                             Text(indexClose[indexNum],
-                                fontSize = 25.sp,
+                                fontSize = 20.sp,
                                 color = Color.White,
                                 modifier = Modifier
                                     .padding(start = 10.dp)
@@ -197,7 +202,7 @@ fun WatchList(navController: NavController, idToken: String) {
                                     .padding(start = 30.dp)
                             )
                             Text("-200.00",
-                                fontSize = 25.sp,
+                                fontSize = 20.sp,
                                 color = Color.Red,
                                 modifier = Modifier
                                     .padding(start = 10.dp)
@@ -216,7 +221,7 @@ fun MainMenu(navController: NavController){
     Row(modifier = Modifier
         .fillMaxWidth()
         .background(Color.Black)
-        .size(70.dp),
+        .size(65.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
 
