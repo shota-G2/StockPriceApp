@@ -53,3 +53,11 @@ data class InfoData(
     val MarketCodeName: String,
 )
 
+data class HolidayDivision(
+    val trading_calendar: List<Date>
+)
+
+data class Date(
+    val Date: String,
+    val HolidayDivision: String
+)

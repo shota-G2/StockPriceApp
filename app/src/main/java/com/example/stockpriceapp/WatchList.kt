@@ -138,7 +138,7 @@ fun WatchList(navController: NavController, idToken: String) {
     val requestIndexData = RequestIndexData(idToken)
     val indexClose = requestIndexData.RequestData()
     val companyName = requestIndexData.RequestCompanyName()
-    val referenceDate = requestIndexData.referenceDate
+    val referenceDate = requestIndexData.TradingCalender()
 
     Column(modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End

@@ -25,21 +25,57 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 @RequiresApi(Build.VERSION_CODES.O)
-class RequestIndexData(val idToken: String) {
+class RequestIndexData(idToken: String) {
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val header = mapOf("Authorization" to idToken)
 
-    val today = LocalDateTime.now()
-    val referenceDateData = today.minusDays(84)
-    val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
-    val referenceDate = referenceDateData.format(dtFormat)
+    fun TradingCalender(): String{
+        val today = LocalDateTime.now()
+        val to = today.minusDays(84)
+        val from = today.minusDays(89)
+        val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
+        val toDay = to.format(dtFormat)
+        val fromDay = from.format(dtFormat)
+
+        var referenceDay = ""
+        runBlocking {
+            val (_, response, result) =
+                "https://api.jquants.com/v1/markets/trading_calendar?from=$fromDay&to=$toDay"
+                    .httpGet()
+                    .header(header)
+                    .awaitStringResponseResult()
+            result.fold(
+
+                {
+                    val holidayDivisionAdapter = moshi.adapter(HolidayDivision::class.java)
+                    val res = String(response.body().toByteArray())
+                    val data = holidayDivisionAdapter.fromJson(res)
+                    val tradingCalendar = data?.trading_calendar
+                    if(tradingCalendar != null){
+                        for(i in 5 downTo 0){
+                            if(tradingCalendar[i].HolidayDivision != "0"){
+                                referenceDay = tradingCalendar[i].Date
+                                break
+                            }
+                        }
+                    }
+                },
+                {
+
+                }
+            )
+        }
+        return referenceDay
+    }
 
     fun RequestData(): List<String> {
         val indexClose = mutableListOf("")
 
+        val TradingCalender = TradingCalender()
+        val referenceDate = TradingCalender.replace("-", "")
+
         runBlocking {
-//            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$referenceDate"
-            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=20230612"
+            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$referenceDate"
                 .httpGet()
                 .header(header)
                 .awaitStringResponseResult()
@@ -67,9 +103,11 @@ class RequestIndexData(val idToken: String) {
     fun RequestCompanyName(): List<String> {
         val companyName = mutableListOf("")
 
+        val TradingCalender = TradingCalender()
+        val referenceDate = TradingCalender.replace("-", "")
+
         runBlocking {
-//            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=$referenceDate"
-            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=20230612"
+            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=$referenceDate"
                 .httpGet()
                 .header(header)
                 .awaitStringResponseResult()
