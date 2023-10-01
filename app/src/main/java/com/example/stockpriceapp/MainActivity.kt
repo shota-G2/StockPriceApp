@@ -149,6 +149,7 @@ fun LoginScreen(navController: NavController){
                                                         val idToken = idTokenResultAdapter.fromJson(res)?.idToken
 
                                                         navController.navigate("watchListScreen/$idToken")
+//                                                        navController.navigate("serchScreen")
 
                                                     }
                                                     is Result.Failure -> {

@@ -102,13 +102,6 @@ fun TopBar(text: String){
             fontSize = 20.sp,
             color = Color.White,
         )},
-        actions = {
-            IconButton(onClick = { /* do something */ },
-                colors = IconButtonDefaults.iconButtonColors(Color.Black),
-            ) {
-                Icon(Icons.Filled.Search, contentDescription = "Search text")
-            }
-        }
     )
 }
 
@@ -248,7 +241,7 @@ fun MainMenu(navController: NavController){
                 fontSize = fontSize
             )
         }
-        TextButton(onClick = {  },
+        TextButton(onClick = { navController.navigateUp() },
         ) {
             Text("まなぶ",
                 color = textColor,
