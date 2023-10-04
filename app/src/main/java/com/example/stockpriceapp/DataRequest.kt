@@ -25,11 +25,14 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 @RequiresApi(Build.VERSION_CODES.O)
-class RequestIndexData(idToken: String) {
+class RequestIndexData() {
+    val myApp = MyApp.getInstance()
+    val idToken = myApp.idToken
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val header = mapOf("Authorization" to idToken)
 
-    fun TradingCalender(): String{
+    fun TradingCalender(){
+        val myApp = MyApp.getInstance()
         val today = LocalDateTime.now()
         val to = today.minusDays(84)
         val from = today.minusDays(89)
@@ -37,7 +40,6 @@ class RequestIndexData(idToken: String) {
         val toDay = to.format(dtFormat)
         val fromDay = from.format(dtFormat)
 
-        var referenceDay = ""
         runBlocking {
             val (_, response, result) =
                 "https://api.jquants.com/v1/markets/trading_calendar?from=$fromDay&to=$toDay"
@@ -54,7 +56,7 @@ class RequestIndexData(idToken: String) {
                     if(tradingCalendar != null){
                         for(i in 5 downTo 0){
                             if(tradingCalendar[i].HolidayDivision != "0"){
-                                referenceDay = tradingCalendar[i].Date
+                                myApp.referenceDate = tradingCalendar[i].Date
                                 break
                             }
                         }
@@ -65,13 +67,11 @@ class RequestIndexData(idToken: String) {
                 }
             )
         }
-        return referenceDay
     }
 
-    fun RequestData(): List<String> {
-        val indexClose = mutableListOf("")
-
-        val TradingCalender = TradingCalender()
+    fun RequestData() {
+        val indexClose = myApp.indexClose
+        val TradingCalender = myApp.referenceDate
         val referenceDate = TradingCalender.replace("-", "")
 
         runBlocking {
@@ -80,14 +80,14 @@ class RequestIndexData(idToken: String) {
                 .header(header)
                 .awaitStringResponseResult()
             result.fold(
-                {   indexClose.remove(indexClose[0])
-                    val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
+                {   val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
                     val res = String(response.body().toByteArray())
                     val data = dailyQuotesAdapter.fromJson(res)
                     val dataQuotes = data?.daily_quotes
 
                     if (dataQuotes != null) {
                         for (i in dataQuotes.indices) {
+                            indexClose.remove("")
                             indexClose.add(dataQuotes[i].Close.toString())
                         }
                     }
@@ -97,13 +97,11 @@ class RequestIndexData(idToken: String) {
                 }
             )
         }
-        return indexClose
     }
 
-    fun RequestCompanyName(): List<String> {
-        val companyName = mutableListOf("")
-
-        val TradingCalender = TradingCalender()
+    fun RequestCompanyName() {
+        val companyName = myApp.companyName
+        val TradingCalender = myApp.referenceDate
         val referenceDate = TradingCalender.replace("-", "")
 
         runBlocking {
@@ -112,7 +110,7 @@ class RequestIndexData(idToken: String) {
                 .header(header)
                 .awaitStringResponseResult()
             result.fold(
-                {   companyName.remove(companyName[0])
+                {
                     val infoAdapter = moshi.adapter(Info::class.java)
                     val res = String(response.body().toByteArray())
                     val data = infoAdapter.fromJson(res)
@@ -120,6 +118,7 @@ class RequestIndexData(idToken: String) {
 
                     if (info != null) {
                         for (i in info.indices) {
+                            companyName.remove("")
                             companyName.add(info[i].CompanyName)
                         }
                     }
@@ -129,6 +128,5 @@ class RequestIndexData(idToken: String) {
                 }
             )
         }
-        return companyName
     }
 }

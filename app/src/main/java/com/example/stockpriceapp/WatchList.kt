@@ -57,24 +57,9 @@ import com.github.kittinunf.fuel.Fuel
 import com.google.android.gms.cast.RequestData
 import kotlinx.coroutines.runBlocking
 
-class WatchList : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-
-        }
-    }
-}
-
-//class IndexDataViewModel(idToken: String): ViewModel() {
-//    val RepuestIndexData = RequestIndexData().RequestData(idToken)
-//    val indexData = MutableLiveData(RepuestIndexData)
-//    val indexList = indexData.value
-//}
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WatchListScreen(navController: NavController, idToken: String = "idToken") {
+fun WatchListScreen(navController: NavController) {
     StockPriceAppTheme {
         //A surface container using the 'background' color from the theme
         Surface(
@@ -86,7 +71,7 @@ fun WatchListScreen(navController: NavController, idToken: String = "idToken") {
                     .background(Color.Black)
             ) {
                 TopBar("ウォッチリスト")
-                WatchList(navController, idToken)
+                WatchList(navController)
                 MainMenu(navController)
             }
         }
@@ -107,7 +92,7 @@ fun TopBar(text: String){
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WatchList(navController: NavController, idToken: String) {
+fun WatchList(navController: NavController) {
 
     Row(
         modifier = Modifier
@@ -125,22 +110,17 @@ fun WatchList(navController: NavController, idToken: String) {
         }
     }
 
-//    val viewModel: IndexDataViewModel = viewModel()
-//    val indexList = viewModel.indexList!!
-
-    val requestIndexData = RequestIndexData(idToken)
-    val indexClose = requestIndexData.RequestData()
-    val companyName = requestIndexData.RequestCompanyName()
-    val referenceDate = requestIndexData.TradingCalender()
+    val myApp = MyApp.getInstance()
+    val companyName = myApp.companyName
+    val referenceDate = myApp.referenceDate.replace("-", "/")
+    val indexClose = myApp.indexClose
 
     Column(modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End
     ){
         Text(text = "(基準日:$referenceDate)",
             fontSize = 10.sp,
-            color = Color.White,
-//            modifier = Modifier
-//                .padding(start = 300.dp)
+            color = Color.White
         )
     }
 
@@ -248,15 +228,5 @@ fun MainMenu(navController: NavController){
                 fontSize = fontSize
             )
         }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun WatchListScreenPreview() {
-    val navController = rememberNavController()
-    StockPriceAppTheme {
-        WatchListScreen(navController)
     }
 }

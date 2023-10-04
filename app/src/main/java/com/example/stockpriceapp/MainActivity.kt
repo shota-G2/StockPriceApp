@@ -3,9 +3,11 @@ package com.example.stockpriceapp
 
 import android.os.Build
 import android.os.Bundle
+import android.transition.CircularPropagation
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,20 +64,14 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "loginScreen" ){
                 composable("loginScreen"){LoginScreen(navController)}
-                composable("watchListScreen/{idToken}",
-                    arguments = listOf(
-                        navArgument("idToken"){ type = NavType.StringType}
-                    )
-                ){ backStackEntry ->
-                    val idToken = backStackEntry.arguments?.getString("idToken") ?: ""
-                    WatchListScreen(navController, idToken)
-                }
+                composable("watchListScreen"){ WatchListScreen(navController)}
                 composable("serchScreen"){ SerchScreen(navController)}
             }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController){
@@ -85,6 +81,8 @@ fun LoginScreen(navController: NavController){
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
+            var editable by remember { mutableStateOf(false) }
+
             Box(modifier = Modifier.fillMaxSize()){
                 Image(painter = painterResource(id = R.drawable.wine),
                     contentDescription = null,
@@ -120,6 +118,8 @@ fun LoginScreen(navController: NavController){
                     )
 
                     Button(onClick = {
+                        editable = !editable
+                        val myApp = MyApp.getInstance()
                         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
                         val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
                         val parameter = Parameter(
@@ -146,11 +146,12 @@ fun LoginScreen(navController: NavController){
                                                     is Result.Success -> {
                                                         val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
                                                         val res = String(idResponse.body().toByteArray())
-                                                        val idToken = idTokenResultAdapter.fromJson(res)?.idToken
+                                                        myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
+                                                        RequestIndexData().TradingCalender()
+                                                        RequestIndexData().RequestCompanyName()
+                                                        RequestIndexData().RequestData()
 
-                                                        navController.navigate("watchListScreen/$idToken")
-//                                                        navController.navigate("serchScreen")
-
+                                                        navController.navigate("watchListScreen")
                                                     }
                                                     is Result.Failure -> {
 
@@ -169,17 +170,22 @@ fun LoginScreen(navController: NavController){
                     ){
                         Text(text = "ログイン")
                     }
+
+                    AnimatedVisibility(visible = editable) {
+                        Box(modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center) {
+                            SimpleProgress()
+                        }
+
+                    }
+
                 }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
-    val navController = rememberNavController()
-    StockPriceAppTheme {
-        LoginScreen(navController)
-    }
+fun SimpleProgress() {
+    CircularProgressIndicator(color = Color.White)
 }
