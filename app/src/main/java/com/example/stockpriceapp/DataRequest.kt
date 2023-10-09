@@ -25,7 +25,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 @RequiresApi(Build.VERSION_CODES.O)
-class RequestIndexData() {
+class RequestIndexData {
     val myApp = MyApp.getInstance()
     val idToken = myApp.idToken
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -47,7 +47,6 @@ class RequestIndexData() {
                     .header(header)
                     .awaitStringResponseResult()
             result.fold(
-
                 {
                     val holidayDivisionAdapter = moshi.adapter(HolidayDivision::class.java)
                     val res = String(response.body().toByteArray())
@@ -80,7 +79,8 @@ class RequestIndexData() {
                 .header(header)
                 .awaitStringResponseResult()
             result.fold(
-                {   val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
+                {
+                    val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
                     val res = String(response.body().toByteArray())
                     val data = dailyQuotesAdapter.fromJson(res)
                     val dataQuotes = data?.daily_quotes

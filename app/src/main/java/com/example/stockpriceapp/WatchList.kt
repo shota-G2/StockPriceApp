@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,9 +67,7 @@ fun WatchListScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            Column(
-                modifier = Modifier
-                    .background(Color.Black)
+            Column(modifier = Modifier.background(Color.Black)
             ) {
                 TopBar("ウォッチリスト")
                 WatchList(navController)
@@ -132,6 +131,7 @@ fun WatchList(navController: NavController) {
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable { navController.navigate("indexDetail/$companyName") }
             ){
                 Box {
                     Image(painter = painterResource(id = R.drawable.wine),

@@ -3,6 +3,7 @@ package com.example.stockpriceapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -32,11 +34,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -67,7 +74,7 @@ fun SerchScreen(navController: NavController){
             ) {
                 TopBar("検索")
                 SerchBar()
-                SerchList()
+                SerchList(navController)
                 MainMenu(navController)
             }
         }
@@ -97,13 +104,89 @@ fun SerchBar() {
     }
 }
 
+val myApp = MyApp.getInstance()
+val companyName = myApp.companyName
+val referenceDate = myApp.referenceDate.replace("-", "/")
+val indexClose = myApp.indexClose
+
 @Composable
-fun SerchList(){
+fun SerchList(navController: NavController){
+    Column(modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.End
+    ){
+        Text(text = "(基準日:$referenceDate)",
+            fontSize = 10.sp,
+            color = Color.White
+        )
+    }
+
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
-        .size(600.dp)
+        .size(617.dp)
     ) {
+        itemsIndexed(companyName){ indexNum, companyName ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigate("indexDetail/$companyName") }
+            ){
+                Box {
+                    Image(
+                        painter = painterResource(id = R.drawable.wine),
+                        contentDescription = null,
+                        contentScale = ContentScale.FillBounds,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp, start = 10.dp, end = 10.dp,)
+                            .size(65.dp)
+                    )
 
+                    Column {
+                        Text(
+                            text = companyName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = 15.sp,
+                            color = Color.White,
+                            modifier = Modifier
+                                .padding(start = 15.dp, top = 15.dp),
+                        )
+                        Row {
+                            Text(
+                                "前日終値",
+                                fontSize = 15.sp,
+                                color = Color.White,
+                                modifier = Modifier
+                                    .padding(start = 15.dp)
+                            )
+
+                            Text(
+                                indexClose[indexNum],
+                                fontSize = 20.sp,
+                                color = Color.White,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                            )
+                            Text(
+                                "前日比",
+                                fontSize = 15.sp,
+                                color = Color.White,
+                                modifier = Modifier
+                                    .padding(start = 30.dp)
+                            )
+                            Text(
+                                "-200.00",
+                                fontSize = 20.sp,
+                                color = Color.Red,
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

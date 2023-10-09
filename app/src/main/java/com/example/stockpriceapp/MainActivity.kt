@@ -61,11 +61,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            //画面遷移設定
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "loginScreen" ){
                 composable("loginScreen"){LoginScreen(navController)}
                 composable("watchListScreen"){ WatchListScreen(navController)}
                 composable("serchScreen"){ SerchScreen(navController)}
+                composable("indexDetail/{companyName}"){ backStackEntry ->
+                    val companyName = backStackEntry.arguments?.getString("companyName") ?: ""
+                    IndexDetail(navController, companyName)
+                }
             }
         }
     }
@@ -74,6 +79,7 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+//ログイン画面
 fun LoginScreen(navController: NavController){
     StockPriceAppTheme {
         //A surface container using the 'background' color from the theme
@@ -84,21 +90,23 @@ fun LoginScreen(navController: NavController){
             var editable by remember { mutableStateOf(false) }
 
             Box(modifier = Modifier.fillMaxSize()){
-                Image(painter = painterResource(id = R.drawable.wine),
+                Image(
+                    painter = painterResource(id = R.drawable.wine),
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight()
                 )
-
                 Column{
                     var text by remember { mutableStateOf("") }
+                    //アドレス入力欄
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
                         label = {
-                            Text(text = "mailaddress",
+                            Text(
+                                text = "mailaddress",
                                 color = Color.DarkGray
                             )
                         },
@@ -106,10 +114,13 @@ fun LoginScreen(navController: NavController){
                         modifier = Modifier.padding(top = 150.dp, start = 55.dp)
                     )
 
-                    OutlinedTextField(value = text,
+                    //パスワード入力欄
+                    OutlinedTextField(
+                        value = text,
                         onValueChange = { text = it },
                         label = {
-                            Text(text = "password",
+                            Text(
+                                text = "password",
                                 color = Color.DarkGray
                             )
                         },
@@ -117,53 +128,68 @@ fun LoginScreen(navController: NavController){
                         modifier = Modifier.padding(top = 10.dp, start = 55.dp)
                     )
 
-                    Button(onClick = {
-                        editable = !editable
-                        val myApp = MyApp.getInstance()
-                        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-                        val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
-                        val parameter = Parameter(
-                            mailaddress = "marimocag2@gmail.com",
-                            password = "princeG21021"
-                        )
+                    //ログインボタン
+                    Button(
+                        onClick = {
+                            //インジケータ表示フラグ
+                            editable = !editable
 
-                        //refreshToken取得
-                        Fuel.post("https://api.jquants.com/v1/token/auth_user")
-                            .body(refreshTokenRequestAdapter.toJson(parameter))
-                            .response { _, response, result ->
-                                when (result) {
-                                    is Result.Success -> {
-                                        val refreshTokenResultAdapter = moshi.adapter(resultRefreshToken::class.java)
-                                        val data = String(response.body().toByteArray())
+                            //グローバル変数格納クラスインスタンス化
+                            val myApp = MyApp.getInstance()
 
-                                        //変数refreshTokenにAPIから返ってきたrefreshTokenを格納する
-                                        val refreshToken = refreshTokenResultAdapter.fromJson(data)?.refreshToken
+                            //moshi,adapter設定
+                            val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+                            val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
+                            val parameter = Parameter(
+                                mailaddress = "marimocag2@gmail.com",
+                                password = "princeG21021"
+                            )
 
-                                        //idToken取得
-                                        Fuel.post("https://api.jquants.com/v1/token/auth_refresh?refreshtoken=$refreshToken")
-                                            .response { _, idResponse, idResult ->
-                                                when (idResult) {
-                                                    is Result.Success -> {
-                                                        val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
-                                                        val res = String(idResponse.body().toByteArray())
-                                                        myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
-                                                        RequestIndexData().TradingCalender()
-                                                        RequestIndexData().RequestCompanyName()
-                                                        RequestIndexData().RequestData()
+                            //refreshToken取得
+                            Fuel.post("https://api.jquants.com/v1/token/auth_user")
+                                .body(refreshTokenRequestAdapter.toJson(parameter))
+                                .response { _, response, result ->
+                                    when (result) {
+                                        is Result.Success -> {
+                                            val refreshTokenResultAdapter =
+                                                moshi.adapter(resultRefreshToken::class.java)
+                                            val data = String(response.body().toByteArray())
 
-                                                        navController.navigate("watchListScreen")
-                                                    }
-                                                    is Result.Failure -> {
+                                            //変数refreshTokenにAPIから返ってきたrefreshTokenを格納する
+                                            val refreshToken =
+                                                refreshTokenResultAdapter.fromJson(data)?.refreshToken
 
+                                            //idToken取得
+                                            Fuel.post("https://api.jquants.com/v1/token/auth_refresh?refreshtoken=$refreshToken")
+                                                .response { _, idResponse, idResult ->
+                                                    when (idResult) {
+                                                        is Result.Success -> {
+                                                            val idTokenResultAdapter =
+                                                                moshi.adapter(resultIdToken::class.java)
+                                                            val res = String(
+                                                                idResponse.body().toByteArray()
+                                                            )
+                                                            myApp.idToken =
+                                                                idTokenResultAdapter.fromJson(res)?.idToken.toString()
+                                                            RequestIndexData().TradingCalender()
+                                                            RequestIndexData().RequestCompanyName()
+                                                            RequestIndexData().RequestData()
+
+                                                            navController.navigate("watchListScreen")
+                                                        }
+
+                                                        is Result.Failure -> {
+
+                                                        }
                                                     }
                                                 }
-                                            }
-                                    }
-                                    is Result.Failure -> {
+                                        }
 
+                                        is Result.Failure -> {
+
+                                        }
                                     }
                                 }
-                            }
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),
                         modifier = Modifier.padding(top = 10.dp, start = 230.dp)
@@ -172,13 +198,13 @@ fun LoginScreen(navController: NavController){
                     }
 
                     AnimatedVisibility(visible = editable) {
-                        Box(modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             SimpleProgress()
                         }
-
                     }
-
                 }
             }
         }
