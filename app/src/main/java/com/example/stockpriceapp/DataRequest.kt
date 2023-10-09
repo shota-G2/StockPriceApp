@@ -55,7 +55,7 @@ class RequestIndexData() {
                     val tradingCalendar = data?.trading_calendar
                     if(tradingCalendar != null){
                         for(i in 5 downTo 0){
-                            if(tradingCalendar[i].HolidayDivision != "0"){
+                            if(tradingCalendar[i].HolidayDivision == "1"){
                                 myApp.referenceDate = tradingCalendar[i].Date
                                 break
                             }
