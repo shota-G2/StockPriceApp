@@ -1,7 +1,9 @@
 package com.example.stockpriceapp
 
 import android.graphics.drawable.Icon
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -18,15 +20,29 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import io.realm.Realm
+import io.realm.kotlin.where
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IndexDetail(navController: NavController, companyName: String){
+    val myApp = MyApp.getInstance()
+    val watchList = myApp.watchList
+
+    val buttonDisplayCheck: Boolean = watchList.contains(companyName)
+
+    val buttonText = if (!buttonDisplayCheck){ "登録" } else { "削除" }
+
     Column(modifier = Modifier
         .background(Color.Black)
         .fillMaxSize()
@@ -45,19 +61,30 @@ fun IndexDetail(navController: NavController, companyName: String){
                 }
             }
         )
-
         Text(
             text = companyName,
             color = Color.White,
             fontSize = 20.sp
         )
         Button(
-            onClick = { /*TODO*/ },
+            onClick = {
+                val realm = Realm.getDefaultInstance()
+                val registeredIndexList = RegisteredIndexList()
+                registeredIndexList.id = "marimocag2@gmail.com"
+                registeredIndexList.registeredIndexList = companyName
+                realm.use { realm ->
+                    realm.executeTransaction {
+                        it.insertOrUpdate(registeredIndexList)
+                    }
+                }
+                myApp.watchList.add(companyName)
+            },
             colors = ButtonDefaults.buttonColors(Color.Gray)
         ) {
             Text(
-                text = "ウォッチリストに登録",
+                text = buttonText
             )
         }
+
     }
 }

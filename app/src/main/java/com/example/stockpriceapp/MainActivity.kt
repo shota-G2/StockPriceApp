@@ -54,6 +54,9 @@ import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
 import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
+import io.realm.Realm
+import io.realm.RealmConfiguration
+import io.realm.kotlin.where
 import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
@@ -61,6 +64,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            //Realm設定
+            Realm.init(this)
+            val config = RealmConfiguration.Builder()
+                .deleteRealmIfMigrationNeeded()
+                .allowWritesOnUiThread(true)
+                .build()
+            Realm.setDefaultConfiguration(config)
+
             //画面遷移設定
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "loginScreen" ){
@@ -137,6 +148,18 @@ fun LoginScreen(navController: NavController){
                             //グローバル変数格納クラスインスタンス化
                             val myApp = MyApp.getInstance()
 
+                            //ウォッチリストをグローバル変数に格納
+                            val realm = Realm.getDefaultInstance()
+                            val watchList = myApp.watchList
+                            watchList.remove("")
+                            realm.use { realm ->
+                                val result = realm.where<RegisteredIndexList>().findAll()
+                                val copyResult = realm.copyFromRealm(result)
+                                for (i in 0 until result.size){
+                                    watchList.add(copyResult[i]?.registeredIndexList.toString())
+                                }
+                            }
+
                             //moshi,adapter設定
                             val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
                             val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
@@ -164,13 +187,9 @@ fun LoginScreen(navController: NavController){
                                                 .response { _, idResponse, idResult ->
                                                     when (idResult) {
                                                         is Result.Success -> {
-                                                            val idTokenResultAdapter =
-                                                                moshi.adapter(resultIdToken::class.java)
-                                                            val res = String(
-                                                                idResponse.body().toByteArray()
-                                                            )
-                                                            myApp.idToken =
-                                                                idTokenResultAdapter.fromJson(res)?.idToken.toString()
+                                                            val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
+                                                            val res = String(idResponse.body().toByteArray())
+                                                            myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
                                                             RequestIndexData().TradingCalender()
                                                             RequestIndexData().RequestCompanyName()
                                                             RequestIndexData().RequestData()

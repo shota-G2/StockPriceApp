@@ -56,6 +56,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
 import com.github.kittinunf.fuel.Fuel
 import com.google.android.gms.cast.RequestData
+import io.realm.Realm
+import io.realm.kotlin.where
 import kotlinx.coroutines.runBlocking
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -110,7 +112,7 @@ fun WatchList(navController: NavController) {
     }
 
     val myApp = MyApp.getInstance()
-    val companyName = myApp.companyName
+    val watchList = myApp.watchList
     val referenceDate = myApp.referenceDate.replace("-", "/")
     val indexClose = myApp.indexClose
 
@@ -127,11 +129,13 @@ fun WatchList(navController: NavController) {
         .fillMaxWidth()
         .size(630.dp)
     ) {
-        itemsIndexed(companyName){ indexNum, companyName ->
+        itemsIndexed(watchList){ indexNum, watchList ->
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { navController.navigate("indexDetail/$companyName") }
+                    .clickable {
+                        navController.navigate("indexDetail/$watchList")
+                    }
             ){
                 Box {
                     Image(painter = painterResource(id = R.drawable.wine),
@@ -145,7 +149,7 @@ fun WatchList(navController: NavController) {
 
                     Column {
 
-                        Text(text = companyName,
+                        Text(text = watchList,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             fontSize = 15.sp,
