@@ -151,7 +151,7 @@ fun LoginScreen(navController: NavController){
                             //ウォッチリストをグローバル変数に格納
                             val realm = Realm.getDefaultInstance()
                             val watchList = myApp.watchList
-                            watchList.remove("")
+                            watchList.clear()
                             realm.use { realm ->
                                 val result = realm.where<RegisteredIndexList>().findAll()
                                 val copyResult = realm.copyFromRealm(result)

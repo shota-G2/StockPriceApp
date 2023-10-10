@@ -85,9 +85,9 @@ class RequestIndexData {
                     val data = dailyQuotesAdapter.fromJson(res)
                     val dataQuotes = data?.daily_quotes
 
+                    indexClose.clear()
                     if (dataQuotes != null) {
                         for (i in dataQuotes.indices) {
-                            indexClose.remove("")
                             indexClose.add(dataQuotes[i].Close.toString())
                         }
                     }
@@ -116,9 +116,9 @@ class RequestIndexData {
                     val data = infoAdapter.fromJson(res)
                     val info = data?.info
 
+                    companyName.clear()
                     if (info != null) {
                         for (i in info.indices) {
-                            companyName.remove("")
                             companyName.add(info[i].CompanyName)
                         }
                     }

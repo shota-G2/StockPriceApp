@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import io.realm.Realm
+import io.realm.kotlin.delete
 import io.realm.kotlin.where
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,16 +69,31 @@ fun IndexDetail(navController: NavController, companyName: String){
         )
         Button(
             onClick = {
-                val realm = Realm.getDefaultInstance()
-                val registeredIndexList = RegisteredIndexList()
-                registeredIndexList.id = "marimocag2@gmail.com"
-                registeredIndexList.registeredIndexList = companyName
-                realm.use { realm ->
-                    realm.executeTransaction {
-                        it.insertOrUpdate(registeredIndexList)
+                if (buttonText == "登録"){
+                    val realm = Realm.getDefaultInstance()
+                    val registeredIndexList = RegisteredIndexList()
+                    registeredIndexList.id = "marimocag2@gmail.com"
+                    registeredIndexList.registeredIndexList = companyName
+                    realm.use { realm ->
+                        realm.executeTransaction {
+                            it.insertOrUpdate(registeredIndexList)
+                        }
                     }
+                    myApp.watchList.add(companyName)
+                    navController.navigate("watchListScreen")
+                } else {
+                    val realm = Realm.getDefaultInstance()
+                    realm.use { reslm ->
+                        realm.executeTransaction {
+                            realm.where(RegisteredIndexList::class.java)
+                                .equalTo("registeredIndexList", companyName)
+                                .findAll().deleteAllFromRealm()
+                        }
+                    }
+                    myApp.watchList.remove(companyName)
+                    navController.navigate("watchListScreen")
                 }
-                myApp.watchList.add(companyName)
+
             },
             colors = ButtonDefaults.buttonColors(Color.Gray)
         ) {
