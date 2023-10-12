@@ -32,7 +32,6 @@ class RequestIndexData {
     val header = mapOf("Authorization" to idToken)
 
     fun TradingCalender(){
-        val myApp = MyApp.getInstance()
         val today = LocalDateTime.now()
         val to = today.minusDays(84)
         val from = today.minusDays(89)
@@ -52,13 +51,18 @@ class RequestIndexData {
                     val res = String(response.body().toByteArray())
                     val data = holidayDivisionAdapter.fromJson(res)
                     val tradingCalendar = data?.trading_calendar
+                    val referenceDate = mutableListOf<String>()
                     if(tradingCalendar != null){
                         for(i in 5 downTo 0){
                             if(tradingCalendar[i].HolidayDivision == "1"){
-                                myApp.referenceDate = tradingCalendar[i].Date
+                                referenceDate.add(tradingCalendar[i].Date)
+                            }
+                            if (referenceDate.size == 2){
                                 break
                             }
                         }
+                        myApp.referenceDate = referenceDate[0]
+                        myApp.previousBusinessDay = referenceDate[1]
                     }
                 },
                 {
@@ -68,13 +72,12 @@ class RequestIndexData {
         }
     }
 
-    fun RequestData() {
-        val indexClose = myApp.indexClose
-        val TradingCalender = myApp.referenceDate
-        val referenceDate = TradingCalender.replace("-", "")
+    fun RequestData(day: String, indexCloseList: MutableList<String>, activevCompanyName: MutableList<String>) {
+        val stockCode = myApp.stockCode
+        val companyName = myApp.companyName
 
         runBlocking {
-            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$referenceDate"
+            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$day"
                 .httpGet()
                 .header(header)
                 .awaitStringResponseResult()
@@ -84,11 +87,18 @@ class RequestIndexData {
                     val res = String(response.body().toByteArray())
                     val data = dailyQuotesAdapter.fromJson(res)
                     val dataQuotes = data?.daily_quotes
+                    val activeCodeList: MutableList<String> = mutableListOf()
 
-                    indexClose.clear()
+                    indexCloseList.clear()
+                    activevCompanyName.clear()
                     if (dataQuotes != null) {
                         for (i in dataQuotes.indices) {
-                            indexClose.add(dataQuotes[i].Close.toString())
+                            activeCodeList.add(dataQuotes[i].Code)
+                            indexCloseList.add(dataQuotes[i].Close.toString())
+                        }
+                        for(i in 0 until activeCodeList.size) {
+                            val indexNum = stockCode.indexOf(activeCodeList[i])
+                            activevCompanyName.add(companyName[indexNum])
                         }
                     }
                 },
@@ -101,6 +111,7 @@ class RequestIndexData {
 
     fun RequestCompanyName() {
         val companyName = myApp.companyName
+        val stockCode = myApp.stockCode
         val TradingCalender = myApp.referenceDate
         val referenceDate = TradingCalender.replace("-", "")
 
@@ -117,9 +128,11 @@ class RequestIndexData {
                     val info = data?.info
 
                     companyName.clear()
+                    stockCode.clear()
                     if (info != null) {
                         for (i in info.indices) {
                             companyName.add(info[i].CompanyName)
+                            stockCode.add(info[i].Code)
                         }
                     }
                 },

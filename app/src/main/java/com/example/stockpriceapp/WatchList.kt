@@ -114,7 +114,7 @@ fun WatchList(navController: NavController) {
     val myApp = MyApp.getInstance()
     val watchList = myApp.watchList
     val referenceDate = myApp.referenceDate.replace("-", "/")
-    val indexClose = myApp.indexClose
+    val onTheDayIndexClose = myApp.onTheDayIndexClose
 
     Column(modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End
@@ -166,7 +166,7 @@ fun WatchList(navController: NavController) {
                                     .padding(start = 15.dp)
                             )
 
-                            Text(indexClose[indexNum],
+                            Text(onTheDayIndexClose[indexNum],
                                 fontSize = 20.sp,
                                 color = Color.White,
                                 modifier = Modifier

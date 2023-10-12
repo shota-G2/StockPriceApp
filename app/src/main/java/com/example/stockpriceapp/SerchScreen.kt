@@ -105,9 +105,10 @@ fun SerchBar() {
 }
 
 val myApp = MyApp.getInstance()
-val companyName = myApp.companyName
+val activeCompanyName = myApp.activeCompanyName
 val referenceDate = myApp.referenceDate.replace("-", "/")
-val indexClose = myApp.indexClose
+val onTheDayIndexClose = myApp.onTheDayIndexClose
+val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
 
 @Composable
 fun SerchList(navController: NavController){
@@ -124,12 +125,12 @@ fun SerchList(navController: NavController){
         .fillMaxWidth()
         .size(617.dp)
     ) {
-        itemsIndexed(companyName){ indexNum, companyName ->
+        itemsIndexed(activeCompanyName){ indexNum, activeCompanyName ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { navController.navigate("indexDetail/$companyName") }
+                    .clickable { navController.navigate("indexDetail/$activeCompanyName") }
             ){
                 Box {
                     Image(
@@ -144,7 +145,7 @@ fun SerchList(navController: NavController){
 
                     Column {
                         Text(
-                            text = companyName,
+                            text = activeCompanyName,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             fontSize = 15.sp,
@@ -162,7 +163,7 @@ fun SerchList(navController: NavController){
                             )
 
                             Text(
-                                indexClose[indexNum],
+                                onTheDayIndexClose[indexNum],
                                 fontSize = 20.sp,
                                 color = Color.White,
                                 modifier = Modifier
@@ -175,8 +176,10 @@ fun SerchList(navController: NavController){
                                 modifier = Modifier
                                     .padding(start = 30.dp)
                             )
+
+//                            val theDayBeforeRatio = theDayBeforeIndexClose[indexNum].toFloat() - onTheDayIndexClose[indexNum].toFloat()
                             Text(
-                                "-200.00",
+                                "-200",
                                 fontSize = 20.sp,
                                 color = Color.Red,
                                 modifier = Modifier

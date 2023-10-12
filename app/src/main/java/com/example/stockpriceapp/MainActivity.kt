@@ -191,8 +191,23 @@ fun LoginScreen(navController: NavController){
                                                             val res = String(idResponse.body().toByteArray())
                                                             myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
                                                             RequestIndexData().TradingCalender()
+
+                                                            val onTheDay = myApp.referenceDate
+                                                            val theDayBefore = myApp.previousBusinessDay
+                                                            val onTheDayIndexClose = myApp.onTheDayIndexClose
+                                                            val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
+                                                            val activeCompanyName = myApp.activeCompanyName
+                                                            val theDayBeforeActiveCompanyName = myApp.theDayBeforeActiveCompanyName
                                                             RequestIndexData().RequestCompanyName()
-                                                            RequestIndexData().RequestData()
+                                                            RequestIndexData().RequestData(onTheDay, onTheDayIndexClose, activeCompanyName)
+                                                            RequestIndexData().RequestData(theDayBefore, theDayBeforeIndexClose, theDayBeforeActiveCompanyName)
+
+//                                                            for (i in 0 until theDayBeforeIndexClose.size){
+//                                                                if ((onTheDayIndexClose[i] == "null") or (theDayBeforeIndexClose[i] == "null")){
+//                                                                    onTheDayIndexClose.removeAt(i)
+//                                                                    theDayBeforeIndexClose.removeAt(i)
+//                                                                }
+//                                                            }
 
                                                             navController.navigate("watchListScreen")
                                                         }
