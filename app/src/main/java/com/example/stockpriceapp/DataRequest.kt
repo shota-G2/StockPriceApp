@@ -72,7 +72,7 @@ class RequestIndexData {
         }
     }
 
-    fun RequestData(day: String, indexCloseList: MutableList<String>, activevCompanyName: MutableList<String>) {
+    fun RequestData(day: String, indexCloseList: MutableList<String>, activeCompanyName: MutableList<String>) {
         val stockCode = myApp.stockCode
         val companyName = myApp.companyName
 
@@ -90,15 +90,17 @@ class RequestIndexData {
                     val activeCodeList: MutableList<String> = mutableListOf()
 
                     indexCloseList.clear()
-                    activevCompanyName.clear()
+                    activeCompanyName.clear()
                     if (dataQuotes != null) {
                         for (i in dataQuotes.indices) {
                             activeCodeList.add(dataQuotes[i].Code)
                             indexCloseList.add(dataQuotes[i].Close.toString())
                         }
                         for(i in 0 until activeCodeList.size) {
-                            val indexNum = stockCode.indexOf(activeCodeList[i])
-                            activevCompanyName.add(companyName[indexNum])
+                            if (stockCode.contains(activeCodeList[i])){
+                                val indexNum = stockCode.indexOf(activeCodeList[i])
+                                activeCompanyName.add(companyName[indexNum])
+                            }
                         }
                     }
                 },

@@ -202,13 +202,6 @@ fun LoginScreen(navController: NavController){
                                                             RequestIndexData().RequestData(onTheDay, onTheDayIndexClose, activeCompanyName)
                                                             RequestIndexData().RequestData(theDayBefore, theDayBeforeIndexClose, theDayBeforeActiveCompanyName)
 
-//                                                            for (i in 0 until theDayBeforeIndexClose.size){
-//                                                                if ((onTheDayIndexClose[i] == "null") or (theDayBeforeIndexClose[i] == "null")){
-//                                                                    onTheDayIndexClose.removeAt(i)
-//                                                                    theDayBeforeIndexClose.removeAt(i)
-//                                                                }
-//                                                            }
-
                                                             navController.navigate("watchListScreen")
                                                         }
 

@@ -121,6 +121,18 @@ fun SerchList(navController: NavController){
         )
     }
 
+    var count = 0
+    for(i in onTheDayIndexClose.indices){
+        if(onTheDayIndexClose[i] == "null"){
+            count += 1
+        }
+    }
+    for (i in 0 until onTheDayIndexClose.size - count) {
+        if (onTheDayIndexClose[i] == "null"){
+            onTheDayIndexClose.removeAt(i)
+            activeCompanyName.removeAt(i)
+        }
+    }
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
         .size(617.dp)
