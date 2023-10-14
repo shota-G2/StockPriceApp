@@ -49,6 +49,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
+import java.util.Collections
 
 class SerchScreen : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,7 +109,7 @@ val myApp = MyApp.getInstance()
 val activeCompanyName = myApp.activeCompanyName
 val referenceDate = myApp.referenceDate.replace("-", "/")
 val onTheDayIndexClose = myApp.onTheDayIndexClose
-val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
+val difference = myApp.difference
 
 @Composable
 fun SerchList(navController: NavController){
@@ -121,28 +122,18 @@ fun SerchList(navController: NavController){
         )
     }
 
-    var count = 0
-    for(i in onTheDayIndexClose.indices){
-        if(onTheDayIndexClose[i] == "null"){
-            count += 1
-        }
-    }
-    for (i in 0 until onTheDayIndexClose.size - count) {
-        if (onTheDayIndexClose[i] == "null"){
-            onTheDayIndexClose.removeAt(i)
-            activeCompanyName.removeAt(i)
-        }
-    }
     LazyColumn(modifier = Modifier
         .fillMaxWidth()
         .size(617.dp)
     ) {
         itemsIndexed(activeCompanyName){ indexNum, activeCompanyName ->
+            val indexClose = onTheDayIndexClose[indexNum]
+            val onTheDaydifference = difference[indexNum]
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { navController.navigate("indexDetail/$activeCompanyName") }
+                    .clickable { navController.navigate("indexDetail/$activeCompanyName/$indexClose/$onTheDaydifference") }
             ){
                 Box {
                     Image(
@@ -155,6 +146,7 @@ fun SerchList(navController: NavController){
                             .size(65.dp)
                     )
 
+                    Collections.replaceAll(onTheDayIndexClose, "null", "-")
                     Column {
                         Text(
                             text = activeCompanyName,
@@ -189,11 +181,14 @@ fun SerchList(navController: NavController){
                                     .padding(start = 30.dp)
                             )
 
-//                            val theDayBeforeRatio = theDayBeforeIndexClose[indexNum].toFloat() - onTheDayIndexClose[indexNum].toFloat()
                             Text(
-                                "-200",
+                                difference[indexNum],
                                 fontSize = 20.sp,
-                                color = Color.Red,
+                                color = if (difference[indexNum] != "-"){
+                                    if (difference[indexNum].toFloat() >= 0) {Color.Green } else {Color.Red}
+                                } else {
+                                    Color.White
+                                },
                                 modifier = Modifier
                                     .padding(start = 10.dp)
                             )

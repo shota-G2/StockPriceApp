@@ -36,7 +36,7 @@ import io.realm.kotlin.where
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IndexDetail(navController: NavController, companyName: String){
+fun IndexDetail(navController: NavController, companyName: String, indexClose: String, difference: String){
     val myApp = MyApp.getInstance()
     val watchList = myApp.watchList
 
@@ -67,6 +67,16 @@ fun IndexDetail(navController: NavController, companyName: String){
             color = Color.White,
             fontSize = 20.sp
         )
+        Text(
+            text = indexClose,
+            color = Color.White,
+            fontSize = 20.sp
+        )
+        Text(
+            text = difference,
+            color = Color.White,
+            fontSize = 20.sp
+        )
         Button(
             onClick = {
                 if (buttonText == "登録"){
@@ -80,6 +90,8 @@ fun IndexDetail(navController: NavController, companyName: String){
                         }
                     }
                     myApp.watchList.add(companyName)
+                    myApp.watchListIndexClose.add(indexClose)
+                    myApp.watchListDifference.add(difference)
                     navController.navigate("watchListScreen")
                 } else {
                     val realm = Realm.getDefaultInstance()
@@ -91,6 +103,8 @@ fun IndexDetail(navController: NavController, companyName: String){
                         }
                     }
                     myApp.watchList.remove(companyName)
+                    myApp.watchListIndexClose.remove(indexClose)
+                    myApp.watchListDifference.remove(difference)
                     navController.navigate("watchListScreen")
                 }
 

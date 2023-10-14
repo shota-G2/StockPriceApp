@@ -103,7 +103,7 @@ fun WatchList(navController: NavController) {
     ) {
         for (i in 0..5){
             Button(
-                onClick = { navController.navigate("serchScreen") },
+                onClick = {  },
                 colors = ButtonDefaults.buttonColors(Color.Gray)
             ) {
                 Text("ウォッチリスト$i")
@@ -113,8 +113,9 @@ fun WatchList(navController: NavController) {
 
     val myApp = MyApp.getInstance()
     val watchList = myApp.watchList
+    val watchListIndexClose = myApp.watchListIndexClose
+    val watchListDifference = myApp.watchListDifference
     val referenceDate = myApp.referenceDate.replace("-", "/")
-    val onTheDayIndexClose = myApp.onTheDayIndexClose
 
     Column(modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End
@@ -130,11 +131,13 @@ fun WatchList(navController: NavController) {
         .size(630.dp)
     ) {
         itemsIndexed(watchList){ indexNum, watchList ->
+            val indexClose = watchListIndexClose[indexNum]
+            val difference = watchListDifference[indexNum]
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        navController.navigate("indexDetail/$watchList")
+                        navController.navigate("indexDetail/$watchList/$indexClose/$difference")
                     }
             ){
                 Box {
@@ -148,7 +151,6 @@ fun WatchList(navController: NavController) {
                     )
 
                     Column {
-
                         Text(text = watchList,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -157,30 +159,37 @@ fun WatchList(navController: NavController) {
                             modifier = Modifier
                                 .padding(start = 15.dp, top = 15.dp),
                         )
-
                         Row {
-                            Text("前日終値",
+                            Text(
+                                "前日終値",
                                 fontSize = 15.sp,
                                 color = Color.White,
                                 modifier = Modifier
                                     .padding(start = 15.dp)
                             )
 
-                            Text(onTheDayIndexClose[indexNum],
+                            Text(
+                                watchListIndexClose[indexNum],
                                 fontSize = 20.sp,
                                 color = Color.White,
                                 modifier = Modifier
                                     .padding(start = 10.dp)
                             )
-                            Text("前日比",
+                            Text(
+                                "前日比",
                                 fontSize = 15.sp,
                                 color = Color.White,
                                 modifier = Modifier
                                     .padding(start = 30.dp)
                             )
-                            Text("-200.00",
+                            Text(
+                                watchListDifference[indexNum],
                                 fontSize = 20.sp,
-                                color = Color.Red,
+                                color = if (watchListDifference[indexNum] != "-"){
+                                    if (watchListDifference[indexNum].toFloat() >= 0) {Color.Green } else {Color.Red}
+                                } else {
+                                    Color.White
+                                },
                                 modifier = Modifier
                                     .padding(start = 10.dp)
                             )

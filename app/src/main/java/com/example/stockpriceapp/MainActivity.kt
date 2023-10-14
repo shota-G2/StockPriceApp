@@ -78,9 +78,11 @@ class MainActivity : ComponentActivity() {
                 composable("loginScreen"){LoginScreen(navController)}
                 composable("watchListScreen"){ WatchListScreen(navController)}
                 composable("serchScreen"){ SerchScreen(navController)}
-                composable("indexDetail/{companyName}"){ backStackEntry ->
+                composable("indexDetail/{companyName}/{indexClose}/{difference}"){ backStackEntry ->
                     val companyName = backStackEntry.arguments?.getString("companyName") ?: ""
-                    IndexDetail(navController, companyName)
+                    val indexClose = backStackEntry.arguments?.getString("indexClose") ?: ""
+                    val difference = backStackEntry.arguments?.getString("difference") ?: ""
+                    IndexDetail(navController, companyName, indexClose, difference)
                 }
             }
         }
@@ -190,17 +192,56 @@ fun LoginScreen(navController: NavController){
                                                             val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
                                                             val res = String(idResponse.body().toByteArray())
                                                             myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
+
+                                                            val requestIndexData = RequestIndexData()
                                                             RequestIndexData().TradingCalender()
 
                                                             val onTheDay = myApp.referenceDate
                                                             val theDayBefore = myApp.previousBusinessDay
-                                                            val onTheDayIndexClose = myApp.onTheDayIndexClose
-                                                            val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
                                                             val activeCompanyName = myApp.activeCompanyName
                                                             val theDayBeforeActiveCompanyName = myApp.theDayBeforeActiveCompanyName
-                                                            RequestIndexData().RequestCompanyName()
-                                                            RequestIndexData().RequestData(onTheDay, onTheDayIndexClose, activeCompanyName)
-                                                            RequestIndexData().RequestData(theDayBefore, theDayBeforeIndexClose, theDayBeforeActiveCompanyName)
+                                                            val onTheDayIndexClose = myApp.onTheDayIndexClose
+                                                            val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
+                                                            val activeStockCode = myApp.activeStockCode
+                                                            val theDayBeforeActiveStockCode = myApp.theDayBeforeActiveStockCode
+
+                                                            requestIndexData.RequestCompanyName()
+                                                            requestIndexData.RequestData(onTheDay, onTheDayIndexClose, activeCompanyName, activeStockCode)
+                                                            requestIndexData.RequestData(theDayBefore, theDayBeforeIndexClose, theDayBeforeActiveCompanyName, theDayBeforeActiveStockCode)
+
+                                                            val difference = myApp.difference
+                                                            val companyName = myApp.companyName
+                                                            val stockCodeList = myApp.stockCode
+
+                                                            difference.clear()
+                                                            for(i in 0 until onTheDayIndexClose.size){
+                                                                if (theDayBeforeActiveCompanyName.contains(activeCompanyName[i])){
+                                                                    val companyCodeIndexNum = companyName.indexOf(activeCompanyName[i])
+                                                                    val stockCode = stockCodeList[companyCodeIndexNum]
+                                                                    val theDayBeforeActiveStockCodeIndexNum = theDayBeforeActiveStockCode.indexOf(stockCode)
+                                                                    if (onTheDayIndexClose[i] != "null" && theDayBeforeIndexClose[theDayBeforeActiveStockCodeIndexNum] != "null"){
+                                                                        val differenceNum = onTheDayIndexClose[i].toFloat() - theDayBeforeIndexClose[theDayBeforeActiveStockCodeIndexNum].toFloat()
+
+                                                                        difference.add(differenceNum.toString())
+                                                                    } else {
+                                                                        difference.add("-")
+                                                                    }
+                                                                } else {
+                                                                    difference.add("-")
+                                                                }
+                                                            }
+
+                                                            val watchListIndexClose = myApp.watchListIndexClose
+                                                            val watchListDifference = myApp.watchListDifference
+                                                            watchListIndexClose.clear()
+                                                            watchListDifference.clear()
+                                                            for(i in 0 until watchList.size){
+                                                                val watchListIndexNum = activeCompanyName.indexOf(watchList[i])
+                                                                if (watchListIndexNum != -1){
+                                                                    watchListIndexClose.add(onTheDayIndexClose[watchListIndexNum])
+                                                                    watchListDifference.add(difference[watchListIndexNum])
+                                                                }
+                                                            }
 
                                                             navController.navigate("watchListScreen")
                                                         }
