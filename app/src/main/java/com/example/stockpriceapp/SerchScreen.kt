@@ -101,7 +101,9 @@ fun SerchBar() {
             },
             modifier = Modifier
                 .fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Filled.Search, null)})
+            leadingIcon = { Icon(Icons.Filled.Search, null)},
+            singleLine = true
+        )
     }
 }
 
