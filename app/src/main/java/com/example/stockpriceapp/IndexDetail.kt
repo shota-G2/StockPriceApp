@@ -42,7 +42,7 @@ fun IndexDetail(navController: NavController, companyName: String, indexClose: S
 
     val buttonDisplayCheck: Boolean = watchList.contains(companyName)
 
-    val buttonText = if (!buttonDisplayCheck){ "登録" } else { "削除" }
+    val buttonText = if (!buttonDisplayCheck){ "登録" } else { "解除" }
 
     Column(modifier = Modifier
         .background(Color.Black)
