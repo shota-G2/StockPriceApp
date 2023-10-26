@@ -100,6 +100,8 @@ class RequestIndexData {
                             if (stockCode.contains(codeList[i])){
                                 val indexNum = stockCode.indexOf(codeList[i])
                                 activeCompanyName.add(companyName[indexNum])
+                            } else {
+                                activeCompanyName.add("-")
                             }
                         }
                     }

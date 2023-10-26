@@ -66,6 +66,7 @@ val activeCompanyName = myApp.activeCompanyName
 val theDayBeforeActiveCompanyName = myApp.theDayBeforeActiveCompanyName
 val referenceDate = myApp.referenceDate.replace("-", "/")
 val onTheDayIndexClose = myApp.onTheDayIndexClose
+val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
 val difference = myApp.difference
 
 @SuppressLint("MutableCollectionMutableState")
@@ -266,16 +267,32 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
         } else {
             itemsIndexed(changedList){ indexNum, List ->
                 val serchedIndexList: MutableList<String> = mutableListOf()
+                val serchedTheDayBeforeIndexClose: MutableList<String> = mutableListOf()
+                val serchedDifference: MutableList<String> = mutableListOf()
 
                 for (i in 0 until changedList.size){
                     val index = activeCompanyName.indexOf(changedList[i])
                     serchedIndexList.add(onTheDayIndexClose[index])
+
+                    if (theDayBeforeActiveCompanyName.contains(changedList[i])){
+                        val index = theDayBeforeActiveCompanyName.indexOf(changedList[i])
+                        serchedTheDayBeforeIndexClose.add(theDayBeforeIndexClose[index])
+
+                        Collections.replaceAll(serchedIndexList, "null", "-")
+                        Collections.replaceAll(serchedTheDayBeforeIndexClose, "null", "-")
+
+                        if (serchedIndexList[i] != "-" && serchedTheDayBeforeIndexClose[i] != "-"){
+                            serchedDifference.add((serchedIndexList[i].toFloat() - serchedTheDayBeforeIndexClose[i].toFloat()).toString())
+                        } else {
+                            serchedDifference.add("-")
+                        }
+                    } else {
+                        serchedDifference.add("-")
+                    }
                 }
 
-                Collections.replaceAll(serchedIndexList, "null", "-")
-
                 val indexClose = serchedIndexList[indexNum]
-                val onTheDaydifference = difference[indexNum]
+                val onTheDaydifference = serchedDifference[indexNum]
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -330,10 +347,10 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                                 )
 
                                 Text(
-                                    difference[indexNum],
+                                    serchedDifference[indexNum],
                                     fontSize = 20.sp,
-                                    color = if (difference[indexNum] != "-"){
-                                        if (difference[indexNum].toFloat() >= 0) {Color.Green } else {Color.Red}
+                                    color = if (serchedDifference[indexNum] != "-"){
+                                        if (serchedDifference[indexNum].toFloat() >= 0) {Color.Green } else {Color.Red}
                                     } else {
                                         Color.White
                                     },
