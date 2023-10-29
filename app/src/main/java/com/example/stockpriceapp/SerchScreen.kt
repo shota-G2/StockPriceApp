@@ -99,7 +99,7 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
     val changedList: MutableList<String> = mutableListOf()
     Box(modifier = Modifier
         .fillMaxWidth()
-        .height(60.dp)
+        .height(48.dp)
     ) {
         var text by remember { mutableStateOf("" ) }
         TextField(
@@ -128,7 +128,6 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                 } else {
                     changedListFlg = 0
                 }
-
                 keyboardController?.hide()
             })
         )
