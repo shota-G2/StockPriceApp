@@ -1,11 +1,14 @@
 package com.example.stockpriceapp
 
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.transition.CircularPropagation
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -34,11 +37,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,7 +62,7 @@ import com.squareup.moshi.Moshi
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.kotlin.where
-import kotlinx.coroutines.runBlocking
+
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -74,11 +79,11 @@ class MainActivity : ComponentActivity() {
 
             //画面遷移設定
             val navController = rememberNavController()
-            NavHost(navController = navController, startDestination = "loginScreen" ){
-                composable("loginScreen"){LoginScreen(navController)}
-                composable("watchListScreen"){ WatchListScreen(navController)}
-                composable("serchScreen"){ SerchScreen(navController)}
-                composable("indexDetail/{companyName}/{indexClose}/{difference}"){ backStackEntry ->
+            NavHost(navController = navController, startDestination = "loginScreen") {
+                composable("loginScreen") { LoginScreen(navController) }
+                composable("watchListScreen") { WatchListScreen(navController) }
+                composable("serchScreen") { SerchScreen(navController) }
+                composable("indexDetail/{companyName}/{indexClose}/{difference}") { backStackEntry ->
                     val companyName = backStackEntry.arguments?.getString("companyName") ?: ""
                     val indexClose = backStackEntry.arguments?.getString("indexClose") ?: ""
                     val difference = backStackEntry.arguments?.getString("difference") ?: ""
@@ -101,6 +106,7 @@ fun LoginScreen(navController: NavController){
             color = MaterialTheme.colorScheme.background
         ) {
             var editable by remember { mutableStateOf(false) }
+            val context = LocalContext.current
 
             Box(modifier = Modifier.fillMaxSize()){
                 Image(
@@ -247,14 +253,16 @@ fun LoginScreen(navController: NavController){
                                                         }
 
                                                         is Result.Failure -> {
-
+                                                            Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
+                                                            editable = false
                                                         }
                                                     }
                                                 }
                                         }
 
                                         is Result.Failure -> {
-
+                                            Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
+                                            editable = false
                                         }
                                     }
                                 }
