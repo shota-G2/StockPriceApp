@@ -1,14 +1,12 @@
 package com.example.stockpriceapp
 
 
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
-import android.transition.CircularPropagation
+import android.provider.Settings.Global.getString
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -24,7 +22,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -39,23 +36,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.ContentProviderCompat.requireContext
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
 import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
@@ -151,121 +138,25 @@ fun LoginScreen(navController: NavController){
                     Button(
                         onClick = {
                             //インジケータ表示フラグ
-                            editable = !editable
+                            editable = true
 
                             //グローバル変数格納クラスインスタンス化
                             val myApp = MyApp.getInstance()
 
-                            //ウォッチリストをグローバル変数に格納
+                            //端末DBからグローバル変数に格納
                             val realm = Realm.getDefaultInstance()
                             val watchList = myApp.watchList
                             watchList.clear()
                             realm.use { realm ->
                                 val result = realm.where<RegisteredIndexList>().findAll()
-                                val copyResult = realm.copyFromRealm(result)
-                                for (i in 0 until result.size){
-                                    watchList.add(copyResult[i]?.registeredIndexList.toString())
+                                for (item in result){
+                                    watchList.add(item?.registeredIndexList.toString())
                                 }
                             }
 
-                            //moshi,adapter設定
-                            val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-                            val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
-                            val parameter = Parameter(
-                                mailaddress = "marimocag2@gmail.com",
-                                password = "princeG21021"
-                            )
-
-                            //refreshToken取得
-                            Fuel.post("https://api.jquants.com/v1/token/auth_user")
-                                .body(refreshTokenRequestAdapter.toJson(parameter))
-                                .response { _, response, result ->
-                                    when (result) {
-                                        is Result.Success -> {
-                                            val refreshTokenResultAdapter =
-                                                moshi.adapter(resultRefreshToken::class.java)
-                                            val data = String(response.body().toByteArray())
-
-                                            //変数refreshTokenにAPIから返ってきたrefreshTokenを格納する
-                                            val refreshToken =
-                                                refreshTokenResultAdapter.fromJson(data)?.refreshToken
-
-                                            //idToken取得
-                                            Fuel.post("https://api.jquants.com/v1/token/auth_refresh?refreshtoken=$refreshToken")
-                                                .response { _, idResponse, idResult ->
-                                                    when (idResult) {
-                                                        is Result.Success -> {
-                                                            val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
-                                                            val res = String(idResponse.body().toByteArray())
-                                                            myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
-
-                                                            val requestIndexData = RequestIndexData()
-                                                            RequestIndexData().TradingCalender()
-
-                                                            val onTheDay = myApp.referenceDate
-                                                            val theDayBefore = myApp.previousBusinessDay
-                                                            val activeCompanyName = myApp.activeCompanyName
-                                                            val theDayBeforeActiveCompanyName = myApp.theDayBeforeActiveCompanyName
-                                                            val onTheDayIndexClose = myApp.onTheDayIndexClose
-                                                            val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
-                                                            val activeStockCode = myApp.activeStockCode
-                                                            val theDayBeforeActiveStockCode = myApp.theDayBeforeActiveStockCode
-
-                                                            requestIndexData.RequestCompanyName()
-                                                            requestIndexData.RequestData(onTheDay, onTheDayIndexClose, activeCompanyName, activeStockCode)
-                                                            requestIndexData.RequestData(theDayBefore, theDayBeforeIndexClose, theDayBeforeActiveCompanyName, theDayBeforeActiveStockCode)
-
-                                                            val difference = myApp.difference
-                                                            val companyName = myApp.companyName
-                                                            val stockCodeList = myApp.stockCode
-
-                                                            difference.clear()
-                                                            for(i in 0 until onTheDayIndexClose.size){
-                                                                if (theDayBeforeActiveCompanyName.contains(activeCompanyName[i])){
-                                                                    val companyCodeIndexNum = companyName.indexOf(activeCompanyName[i])
-                                                                    val stockCode = stockCodeList[companyCodeIndexNum]
-                                                                    val theDayBeforeActiveStockCodeIndexNum = theDayBeforeActiveStockCode.indexOf(stockCode)
-                                                                    if (onTheDayIndexClose[i] != "null" && theDayBeforeIndexClose[theDayBeforeActiveStockCodeIndexNum] != "null"){
-                                                                        val differenceNum = onTheDayIndexClose[i].toFloat() - theDayBeforeIndexClose[theDayBeforeActiveStockCodeIndexNum].toFloat()
-
-                                                                        difference.add(differenceNum.toString())
-                                                                    } else {
-                                                                        difference.add("-")
-                                                                    }
-                                                                } else {
-                                                                    difference.add("-")
-                                                                }
-                                                            }
-
-                                                            val watchListIndexClose = myApp.watchListIndexClose
-                                                            val watchListDifference = myApp.watchListDifference
-                                                            watchListIndexClose.clear()
-                                                            watchListDifference.clear()
-                                                            for(i in 0 until watchList.size){
-                                                                val watchListIndexNum = activeCompanyName.indexOf(watchList[i])
-                                                                if (watchListIndexNum != -1){
-                                                                    watchListIndexClose.add(onTheDayIndexClose[watchListIndexNum])
-                                                                    watchListDifference.add(difference[watchListIndexNum])
-                                                                }
-                                                            }
-
-                                                            navController.navigate("watchListScreen")
-                                                        }
-
-                                                        is Result.Failure -> {
-                                                            Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                                                            editable = false
-                                                        }
-                                                    }
-                                                }
-                                        }
-
-                                        is Result.Failure -> {
-                                            Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                                            editable = false
-                                        }
-                                    }
-                                }
+                            //refreshToken取得～リスト取得
+                            val apiRequest = apiRequest()
+                            apiRequest.getRefreshToken(context, watchList, navController)
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),
                         modifier = Modifier.padding(top = 10.dp, start = 230.dp)

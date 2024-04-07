@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">StockPriceApp</string>
+    <string name="errorText">通信エラーが発生しました</string>
+
+    //API通信URL
+    <string name="getRefreshTokenUrl">https://api.jquants.com/v1/token/auth_user</string>
+    <string name="getIdTokenUrl">https://api.jquants.com/v1/token/auth_refresh?refreshtoken=</string>
 </resources>

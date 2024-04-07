@@ -3,13 +3,18 @@ package com.example.stockpriceapp
 import android.app.Application
 
 class MyApp: Application() {
+    //refreshToken
+    lateinit var refreshToken: String
 
     //idToken
     lateinit var idToken: String
+
     //直近営業日
     lateinit var referenceDate: String
+
     //前営業日
     lateinit var previousBusinessDay: String
+
     //全企業名・銘柄コード
     var companyName: MutableList<String> = mutableListOf()
     var stockCode: MutableList<String> = mutableListOf()
@@ -24,7 +29,7 @@ class MyApp: Application() {
     var theDayBeforeActiveStockCode: MutableList<String> = mutableListOf()
     var theDayBeforeIndexClose: MutableList<String> = mutableListOf()
 
-    //検索画面前日比
+    //前日比
     var difference: MutableList<String> = mutableListOf()
 
     //ウォッチリスト
@@ -42,4 +47,3 @@ class MyApp: Application() {
             return instance!!
         }
     }
-}
