@@ -1,3 +1,5 @@
+@file:Suppress("IMPLICIT_CAST_TO_ANY")
+
 package com.example.stockpriceapp
 
 import android.annotation.SuppressLint
@@ -36,6 +38,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -48,6 +51,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
 import java.util.Collections
+import kotlin.math.round
 
 val myApp = MyApp.getInstance()
 val activeCompanyName = myApp.activeCompanyName
@@ -94,6 +98,7 @@ fun SerchScreen(navController: NavController){
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SerchList(navController: NavController, activeCompanyName: MutableList<String>){
+    val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var changedListFlg by remember { mutableStateOf(0) }
     val changedList: MutableList<String> = mutableListOf()
@@ -119,9 +124,9 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
             keyboardActions = KeyboardActions(onSearch = {
                 if (!text.isEmpty()){
                     changedList.clear()
-                    for (i in 0 until activeCompanyName.size){
-                        if (activeCompanyName[i].contains(text)){
-                            changedList.add(activeCompanyName[i])
+                    for (item in activeCompanyName){
+                        if (item.contains(text)){
+                            changedList.add(item)
                         }
                     }
                     changedListFlg += 1
@@ -149,8 +154,17 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
     ) {
         if(changedListFlg == 0) {
             itemsIndexed(activeCompanyName) { indexNum, activeCompanyName ->
-                val indexClose = onTheDayIndexClose[indexNum]
-                val onTheDaydifference = difference[indexNum]
+                //小数点第二位以下四捨五入
+                val indexClose = if(onTheDayIndexClose[indexNum] != "-") {
+                    (round(onTheDayIndexClose[indexNum].toDouble() * 100) / 100).toString()
+                } else {
+                    onTheDayIndexClose[indexNum]
+                }
+                val onTheDaydifference = if(difference[indexNum] != "-") {
+                    (round(difference[indexNum].toDouble() * 100) / 100).toString()
+                } else {
+                    difference[indexNum]
+                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -182,7 +196,7 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
 
                             Row {
                                 Text(
-                                    "前日終値",
+                                    context.getString(R.string.indexClose),
                                     fontSize = 15.sp,
                                     color = Color.White,
                                     modifier = Modifier
@@ -190,14 +204,14 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                                 )
 
                                 Text(
-                                    onTheDayIndexClose[indexNum],
+                                    indexClose,
                                     fontSize = 20.sp,
                                     color = Color.White,
                                     modifier = Modifier
                                         .padding(start = 10.dp)
                                 )
                                 Text(
-                                    "前日比",
+                                    context.getString(R.string.difference),
                                     fontSize = 15.sp,
                                     color = Color.White,
                                     modifier = Modifier
@@ -205,10 +219,10 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                                 )
 
                                 Text(
-                                    difference[indexNum],
+                                    onTheDaydifference,
                                     fontSize = 20.sp,
-                                    color = if (difference[indexNum] != "-") {
-                                        if (difference[indexNum].toFloat() >= 0) {
+                                    color = if (onTheDaydifference != "-") {
+                                        if (onTheDaydifference.toFloat() >= 0) {
                                             Color.Green
                                         } else {
                                             Color.Red

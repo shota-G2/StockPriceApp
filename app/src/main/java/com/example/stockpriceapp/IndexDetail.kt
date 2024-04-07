@@ -179,7 +179,11 @@ fun IndexDetail(navController: NavController, companyName: String, indexClose: S
                 onClick = {
                     showDialog = true
                 },
-                colors = ButtonDefaults.buttonColors(Color.Gray),
+                colors = if(buttonText == "登録") {
+                    ButtonDefaults.buttonColors(Color.Green)
+                } else {
+                    ButtonDefaults.buttonColors(Color.Gray)
+                },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 10.dp, bottom = 10.dp)

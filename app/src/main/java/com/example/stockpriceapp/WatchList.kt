@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,6 +51,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
 import java.util.Collections
+import kotlin.math.round
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -99,6 +101,7 @@ fun TopBar(text: String){
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WatchList(navController: NavController) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -140,8 +143,17 @@ fun WatchList(navController: NavController) {
             .size(630.dp)
         ) {
             itemsIndexed(watchList){ indexNum, watchList ->
-                val indexClose = watchListIndexClose[indexNum]
-                val difference = watchListDifference[indexNum]
+                //小数点第二位以下四捨五入
+                val indexClose = if(onTheDayIndexClose[indexNum] != "-") {
+                    (round(watchListIndexClose[indexNum].toDouble() * 100) / 100).toString()
+                } else {
+                    watchListIndexClose[indexNum]
+                }
+                val difference = if(watchListDifference[indexNum] != "-") {
+                    (round(watchListDifference[indexNum].toDouble() * 10) / 10).toString()
+                } else {
+                    watchListIndexClose[indexNum]
+                }
                 Row(verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -171,7 +183,7 @@ fun WatchList(navController: NavController) {
                             )
                             Row {
                                 Text(
-                                    "前日終値",
+                                    context.getString(R.string.indexClose),
                                     fontSize = 15.sp,
                                     color = Color.White,
                                     modifier = Modifier
@@ -179,21 +191,21 @@ fun WatchList(navController: NavController) {
                                 )
 
                                 Text(
-                                    watchListIndexClose[indexNum],
+                                    indexClose,
                                     fontSize = 20.sp,
                                     color = Color.White,
                                     modifier = Modifier
                                         .padding(start = 10.dp)
                                 )
                                 Text(
-                                    "前日比",
+                                    context.getString(R.string.difference),
                                     fontSize = 15.sp,
                                     color = Color.White,
                                     modifier = Modifier
                                         .padding(start = 30.dp)
                                 )
                                 Text(
-                                    watchListDifference[indexNum],
+                                    difference,
                                     fontSize = 20.sp,
                                     color = if (watchListDifference[indexNum] != "-"){
                                         if (watchListDifference[indexNum].toFloat() >= 0) {Color.Green } else {Color.Red}

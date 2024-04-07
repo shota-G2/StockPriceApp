@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">StockPriceApp</string>
     <string name="errorText">通信エラーが発生しました</string>
+    <string name="indexClose">前日終値</string>
+    <string name="difference">前日比</string>
 
     //API通信URL
     <string name="getRefreshTokenUrl">https://api.jquants.com/v1/token/auth_user</string>
