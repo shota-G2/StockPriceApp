@@ -35,15 +35,16 @@ class MyApp: Application() {
     //ウォッチリスト
     var watchList: MutableList<String> = mutableListOf()
     var watchListIndexClose: MutableList<String> = mutableListOf()
-    var watchListDifference : MutableList<String> = mutableListOf()
+    var watchListDifference: MutableList<String> = mutableListOf()
 
     companion object {
         private var instance: MyApp? = null
 
         fun getInstance(): MyApp {
-            if(instance == null) {
+            if (instance == null) {
                 instance = MyApp()
             }
             return instance!!
         }
     }
+}
