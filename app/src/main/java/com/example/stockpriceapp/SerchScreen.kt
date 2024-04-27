@@ -144,25 +144,14 @@ fun SerchList(
         .size(617.dp)
     ) {
         if(changedListFlg == 0) {
-            itemsIndexed(companyData) { indexNum, displayCompanyData ->
-                val onTheDayIndexClose = displayCompanyData.onTheDayIndexClose
-                val theDayBeforeIndexClose = displayCompanyData.theDayBeforeIndexClose
-                //小数点第二位以下四捨五入
-                val indexClose = if(onTheDayIndexClose != null) {
-                    (round(onTheDayIndexClose * 100) / 100).toString()
-                } else {
-                    "-"
-                }
-                val difference = if(onTheDayIndexClose != null && theDayBeforeIndexClose != null) {
-                    (round((onTheDayIndexClose!! - theDayBeforeIndexClose!!) * 100) / 100).toString()
-                } else {
-                    "-"
-                }
+            itemsIndexed(companyData) { _, list ->
+                val (indexClose, difference) = setDisplayData(list.onTheDayIndexClose, list.theDayBeforeIndexClose)
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { navController.navigate("indexDetail/${displayCompanyData.companyName}/$indexClose/$difference") }
+                        .clickable { navController.navigate("indexDetail/${list.companyName}/$indexClose/$difference") }
                 ) {
                     Box {
                         Image(
@@ -177,7 +166,7 @@ fun SerchList(
 
                         Column {
                             Text(
-                                text = displayCompanyData.companyName,
+                                text = list.companyName,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 15.sp,

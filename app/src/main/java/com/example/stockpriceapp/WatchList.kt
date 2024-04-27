@@ -148,25 +148,17 @@ fun WatchList(navController: NavController) {
             .fillMaxSize()
             .size(630.dp)
         ) {
-            itemsIndexed(watchListData){ indexNum, list ->
-                for (companyData in myApp.companyData) {
-                    for (listData in myApp.watchListData) {
-                        if (companyData.companyName == listData.companyName) {
-                            listData.onTheDayIndexClose = companyData.onTheDayIndexClose
-                            listData.theDayBeforeIndexClose = companyData.theDayBeforeIndexClose
+            itemsIndexed(watchListData){ _, list ->
+                for (companyData in companyData) {
+                    for (watchListData in watchListData) {
+                        if (companyData.companyName == watchListData.companyName) {
+                            watchListData.onTheDayIndexClose = companyData.onTheDayIndexClose
+                            watchListData.theDayBeforeIndexClose = companyData.theDayBeforeIndexClose
                         }
                     }
                 }
-                val indexClose = if (list.onTheDayIndexClose != null) {
-                    (round(list.onTheDayIndexClose!! * 100) / 100).toString()
-                } else {
-                    "-"
-                }
-                val difference = if (list.onTheDayIndexClose != null || list.theDayBeforeIndexClose != null) {
-                    (round((list.onTheDayIndexClose!! - list.theDayBeforeIndexClose!!) * 100) / 100).toString()
-                } else {
-                    "-"
-                }
+
+                val (indexClose, difference) = setDisplayData(list.onTheDayIndexClose, list.theDayBeforeIndexClose)
 
                 Row(verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -310,8 +302,19 @@ fun MainMenu(navController: NavController) {
     )
 }
 
-fun setIndexClose() {
+fun setDisplayData(onTheDayIndexClose: Float?, theDayBeforeIndexClose: Float?): Pair<String, String> {
+    val indexClose = if (onTheDayIndexClose != null) {
+        (round(onTheDayIndexClose * 100) / 100).toString()
+    } else {
+        "-"
+    }
+    val difference = if (onTheDayIndexClose != null && theDayBeforeIndexClose != null) {
+        (round((onTheDayIndexClose!! - theDayBeforeIndexClose!!) * 100) / 100).toString()
+    } else {
+        "-"
+    }
 
+    return Pair(indexClose, difference)
 }
 
 //@RequiresApi(Build.VERSION_CODES.O)
