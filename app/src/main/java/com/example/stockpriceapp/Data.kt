@@ -13,6 +13,19 @@ data class resultIdToken(
     val idToken: String
 )
 
+data class CompanyData(
+    val companyName: String,
+    val stockCode: String,
+    var onTheDayIndexClose: Float? = null,
+    var theDayBeforeIndexClose: Float? = null
+)
+
+data class WatchCompanyData(
+    val companyName: String,
+    var onTheDayIndexClose: Float? = null,
+    var theDayBeforeIndexClose: Float? = null
+)
+
 data class DailyQuotes(
     val daily_quotes: List<DailyQuotesData>
 )

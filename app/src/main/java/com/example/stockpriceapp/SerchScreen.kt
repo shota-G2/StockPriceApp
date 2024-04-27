@@ -46,20 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
-import java.util.Collections
 import kotlin.math.round
-
-val myApp = MyApp.getInstance()
-val activeCompanyName = myApp.activeCompanyName
-val theDayBeforeActiveCompanyName = myApp.theDayBeforeActiveCompanyName
-val referenceDate = myApp.referenceDate.replace("-", "/")
-val onTheDayIndexClose = myApp.onTheDayIndexClose
-val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
-val difference = myApp.difference
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
@@ -75,7 +63,7 @@ fun SerchScreen(navController: NavController){
                     .background(Color.Black)
                     .fillMaxSize()
             ) {
-                val displayList by remember { mutableStateOf(activeCompanyName) }
+                val displayList by remember { mutableStateOf(companyData) }
                 Column {
                     TopBar("検索")
                 }
@@ -97,11 +85,14 @@ fun SerchScreen(navController: NavController){
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun SerchList(navController: NavController, activeCompanyName: MutableList<String>){
+fun SerchList(
+    navController: NavController,
+    companyData: MutableList<CompanyData>
+){
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var changedListFlg by remember { mutableStateOf(0) }
-    val changedList: MutableList<String> = mutableListOf()
+    val changedList: MutableList<CompanyData> = mutableListOf()
     Box(modifier = Modifier
         .fillMaxWidth()
         .height(48.dp)
@@ -124,12 +115,12 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
             keyboardActions = KeyboardActions(onSearch = {
                 if (!text.isEmpty()){
                     changedList.clear()
-                    for (item in activeCompanyName){
-                        if (item.contains(text)){
+                    for (item in companyData){
+                        if (item.companyName.contains(text)){
                             changedList.add(item)
                         }
                     }
-                    changedListFlg += 1
+                    changedListFlg = 1
                 } else {
                     changedListFlg = 0
                 }
@@ -153,23 +144,25 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
         .size(617.dp)
     ) {
         if(changedListFlg == 0) {
-            itemsIndexed(activeCompanyName) { indexNum, activeCompanyName ->
+            itemsIndexed(companyData) { indexNum, displayCompanyData ->
+                val onTheDayIndexClose = displayCompanyData.onTheDayIndexClose
+                val theDayBeforeIndexClose = displayCompanyData.theDayBeforeIndexClose
                 //小数点第二位以下四捨五入
-                val indexClose = if(onTheDayIndexClose[indexNum] != "-") {
-                    (round(onTheDayIndexClose[indexNum].toDouble() * 100) / 100).toString()
+                val indexClose = if(onTheDayIndexClose != null) {
+                    (round(onTheDayIndexClose * 100) / 100).toString()
                 } else {
-                    onTheDayIndexClose[indexNum]
+                    "-"
                 }
-                val onTheDaydifference = if(difference[indexNum] != "-") {
-                    (round(difference[indexNum].toDouble() * 100) / 100).toString()
+                val difference = if(onTheDayIndexClose != null && theDayBeforeIndexClose != null) {
+                    (round((onTheDayIndexClose!! - theDayBeforeIndexClose!!) * 100) / 100).toString()
                 } else {
-                    difference[indexNum]
+                    "-"
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { navController.navigate("indexDetail/$activeCompanyName/$indexClose/$onTheDaydifference") }
+                        .clickable { navController.navigate("indexDetail/${displayCompanyData.companyName}/$indexClose/$difference") }
                 ) {
                     Box {
                         Image(
@@ -182,10 +175,9 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                                 .size(65.dp)
                         )
 
-                        Collections.replaceAll(onTheDayIndexClose, "null", "-")
                         Column {
                             Text(
-                                text = activeCompanyName,
+                                text = displayCompanyData.companyName,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 15.sp,
@@ -219,10 +211,10 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                                 )
 
                                 Text(
-                                    onTheDaydifference,
+                                    difference,
                                     fontSize = 20.sp,
-                                    color = if (onTheDaydifference != "-") {
-                                        if (onTheDaydifference.toFloat() >= 0) {
+                                    color = if (difference != "-") {
+                                        if (difference.toFloat() >= 0) {
                                             Color.Green
                                         } else {
                                             Color.Red
@@ -239,39 +231,25 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                 }
             }
         } else {
-            itemsIndexed(changedList){ indexNum, List ->
-                val serchedIndexList: MutableList<String> = mutableListOf()
-                val serchedTheDayBeforeIndexClose: MutableList<String> = mutableListOf()
-                val serchedDifference: MutableList<String> = mutableListOf()
-
-                for (i in 0 until changedList.size){
-                    val index = activeCompanyName.indexOf(changedList[i])
-                    serchedIndexList.add(onTheDayIndexClose[index])
-
-                    if (theDayBeforeActiveCompanyName.contains(changedList[i])){
-                        val index = theDayBeforeActiveCompanyName.indexOf(changedList[i])
-                        serchedTheDayBeforeIndexClose.add(theDayBeforeIndexClose[index])
-
-                        Collections.replaceAll(serchedIndexList, "null", "-")
-                        Collections.replaceAll(serchedTheDayBeforeIndexClose, "null", "-")
-
-                        if (serchedIndexList[i] != "-" && serchedTheDayBeforeIndexClose[i] != "-"){
-                            serchedDifference.add((serchedIndexList[i].toFloat() - serchedTheDayBeforeIndexClose[i].toFloat()).toString())
-                        } else {
-                            serchedDifference.add("-")
-                        }
-                    } else {
-                        serchedDifference.add("-")
-                    }
+            itemsIndexed(changedList){ indexNum, list ->
+                val serchedIndexClose = list.onTheDayIndexClose
+                val  serchedTheDayBeforeIndexClose = list.theDayBeforeIndexClose
+                val indexClose = if (serchedIndexClose != null) {
+                    (round(serchedIndexClose!! * 100) / 100).toString()
+                } else {
+                    "-"
+                }
+                val difference = if (serchedIndexClose != null || serchedTheDayBeforeIndexClose != null) {
+                    (round((serchedIndexClose!! - serchedTheDayBeforeIndexClose!!) * 100) / 100).toString()
+                } else {
+                    "-"
                 }
 
-                val indexClose = serchedIndexList[indexNum]
-                val onTheDaydifference = serchedDifference[indexNum]
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { navController.navigate("indexDetail/$List/$indexClose/$onTheDaydifference") }
+                        .clickable { navController.navigate("indexDetail/${list.companyName}/$indexClose/$difference") }
                 ){
                     Box {
                         Image(
@@ -286,7 +264,7 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
 
                         Column {
                             Text(
-                                text = List,
+                                text = list.companyName,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 15.sp,
@@ -306,7 +284,7 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                                 )
 
                                 Text(
-                                    serchedIndexList[indexNum],
+                                    indexClose,
                                     fontSize = 20.sp,
                                     color = Color.White,
                                     modifier = Modifier
@@ -321,10 +299,10 @@ fun SerchList(navController: NavController, activeCompanyName: MutableList<Strin
                                 )
 
                                 Text(
-                                    serchedDifference[indexNum],
+                                    difference,
                                     fontSize = 20.sp,
-                                    color = if (serchedDifference[indexNum] != "-"){
-                                        if (serchedDifference[indexNum].toFloat() >= 0) {Color.Green } else {Color.Red}
+                                    color = if (difference != "-"){
+                                        if (difference.toFloat() >= 0) {Color.Green } else {Color.Red}
                                     } else {
                                         Color.White
                                     },

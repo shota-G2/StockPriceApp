@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-//ログイン画面
+// ログイン画面
 fun LoginScreen(navController: NavController){
     StockPriceAppTheme {
         //A surface container using the 'background' color from the theme
@@ -106,7 +106,7 @@ fun LoginScreen(navController: NavController){
                 )
                 Column{
                     var text by remember { mutableStateOf("") }
-                    //アドレス入力欄
+                    // アドレス入力欄
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
@@ -120,7 +120,7 @@ fun LoginScreen(navController: NavController){
                         modifier = Modifier.padding(top = 150.dp, start = 55.dp)
                     )
 
-                    //パスワード入力欄
+                    // パスワード入力欄
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
@@ -134,29 +134,15 @@ fun LoginScreen(navController: NavController){
                         modifier = Modifier.padding(top = 10.dp, start = 55.dp)
                     )
 
-                    //ログインボタン
+                    // ログインボタン
                     Button(
                         onClick = {
-                            //インジケータ表示フラグ
+                            // インジケータ表示フラグ
                             editable = true
 
-                            //グローバル変数格納クラスインスタンス化
-                            val myApp = MyApp.getInstance()
-
-                            //端末DBからグローバル変数に格納
-                            val realm = Realm.getDefaultInstance()
-                            val watchList = myApp.watchList
-                            watchList.clear()
-                            realm.use { realm ->
-                                val result = realm.where<RegisteredIndexList>().findAll()
-                                for (item in result){
-                                    watchList.add(item?.registeredIndexList.toString())
-                                }
-                            }
-
-                            //refreshToken取得～リスト取得
+                            // refreshToken取得～リスト取得
                             val apiRequest = apiRequest()
-                            apiRequest.getRefreshToken(context, watchList, navController)
+                            apiRequest.getRefreshToken(context, navController)
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),
                         modifier = Modifier.padding(top = 10.dp, start = 230.dp)

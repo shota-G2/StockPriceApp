@@ -66,11 +66,15 @@ import io.realm.kotlin.where
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IndexDetail(navController: NavController, companyName: String, indexClose: String, difference: String){
-    val myApp = MyApp.getInstance()
-
     //リスト登録ボタン表示
-    val watchList = myApp.watchList
-    val buttonText = if (!watchList.contains(companyName)) "登録"  else  "解除"
+    var buttonText = ""
+    for (watchList in myApp.watchListData) {
+        buttonText = if (watchList.companyName == companyName) {
+            "解除"
+        } else {
+            "登録"
+        }
+    }
 
     //ダイアログ表示フラグ
     var showDialog by remember { mutableStateOf(false) }
@@ -180,7 +184,7 @@ fun IndexDetail(navController: NavController, companyName: String, indexClose: S
                     showDialog = true
                 },
                 colors = if(buttonText == "登録") {
-                    ButtonDefaults.buttonColors(Color.Green)
+                    ButtonDefaults.buttonColors(Color.Red)
                 } else {
                     ButtonDefaults.buttonColors(Color.Gray)
                 },
@@ -214,9 +218,6 @@ fun IndexDetail(navController: NavController, companyName: String, indexClose: S
                                     it.insertOrUpdate(registeredIndexList)
                                 }
                             }
-                            myApp.watchList.add(companyName)
-                            myApp.watchListIndexClose.add(indexClose)
-                            myApp.watchListDifference.add(difference)
                             navController.navigate("watchListScreen")
                         } else {
                             val realm = Realm.getDefaultInstance()
@@ -227,9 +228,6 @@ fun IndexDetail(navController: NavController, companyName: String, indexClose: S
                                         .findAll().deleteAllFromRealm()
                                 }
                             }
-                            myApp.watchList.remove(companyName)
-                            myApp.watchListIndexClose.remove(indexClose)
-                            myApp.watchListDifference.remove(difference)
                             navController.navigate("watchListScreen")
                         }
                         showDialog = false

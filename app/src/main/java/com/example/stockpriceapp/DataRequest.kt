@@ -19,7 +19,10 @@ class apiRequest {
     val myApp = MyApp.getInstance()
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
-    fun getRefreshToken(context: Context, watchList: MutableList<String>, navController: NavController) {
+    fun getRefreshToken(
+        context: Context,
+        navController: NavController
+    ) {
         //moshi,adapter設定
         val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
         val parameter = Parameter(
@@ -44,7 +47,7 @@ class apiRequest {
 
                         //idToken取得
                         val apiRequest = apiRequest()
-                        apiRequest.getIdToken(context, watchList, navController)
+                        apiRequest.getIdToken(context, navController)
                     }
                     is Result.Failure -> {
                         Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
@@ -53,8 +56,14 @@ class apiRequest {
             }
     }
 
-    fun getIdToken(context: Context, watchList: MutableList<String>, navController: NavController) {
+    fun getIdToken(
+        context: Context,
+        navController: NavController
+    ) {
         val getIdTokenUrl = context.getString(R.string.getIdTokenUrl) + myApp.refreshToken
+        val companyData = myApp.companyData
+        val apiRequest = apiRequest()
+
         Fuel.post(getIdTokenUrl)
             .response { _, response, result ->
                 when (result) {
@@ -64,66 +73,24 @@ class apiRequest {
                         myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
 
                         //営業日判定
-                        val apiRequest = apiRequest()
                         apiRequest.TradingCalender(context)
 
-                        val activeCompanyName = myApp.activeCompanyName
-                        val theDayBeforeActiveCompanyName = myApp.theDayBeforeActiveCompanyName
-                        val onTheDayIndexClose = myApp.onTheDayIndexClose
-                        val theDayBeforeIndexClose = myApp.theDayBeforeIndexClose
-                        val theDayBeforeActiveStockCode = myApp.theDayBeforeActiveStockCode
-
+                        // 全企業名取得
                         apiRequest.RequestCompanyName(context)
+
+                        //対象日の終値取得（無料版の仕様により本日から84日前）
                         apiRequest.RequestData(
                             myApp.referenceDate,
-                            myApp.onTheDayIndexClose,
-                            myApp.activeCompanyName,
-                            myApp.activeStockCode,
+                            companyData,
                             context
                         )
+
+                        //対象日前日の終値取得
                         apiRequest.RequestData(
                             myApp.previousBusinessDay,
-                            myApp.theDayBeforeIndexClose,
-                            myApp.theDayBeforeActiveCompanyName,
-                            myApp.theDayBeforeActiveStockCode,
+                            companyData,
                             context
                         )
-
-                        val difference = myApp.difference
-                        val companyName = myApp.companyName
-                        val stockCodeList = myApp.stockCode
-
-                        difference.clear()
-                        for (i in 0 until onTheDayIndexClose.size) {
-                            if (theDayBeforeActiveCompanyName.contains(activeCompanyName[i])) {
-                                val companyCodeIndexNum = companyName.indexOf(activeCompanyName[i])
-                                val stockCode = stockCodeList[companyCodeIndexNum]
-                                val theDayBeforeActiveStockCodeIndexNum =
-                                    theDayBeforeActiveStockCode.indexOf(stockCode)
-                                if (onTheDayIndexClose[i] != "null" && theDayBeforeIndexClose[theDayBeforeActiveStockCodeIndexNum] != "null") {
-                                    val differenceNum =
-                                        onTheDayIndexClose[i].toFloat() - theDayBeforeIndexClose[theDayBeforeActiveStockCodeIndexNum].toFloat()
-
-                                    difference.add(differenceNum.toString())
-                                } else {
-                                    difference.add("-")
-                                }
-                            } else {
-                                difference.add("-")
-                            }
-                        }
-
-                        val watchListIndexClose = myApp.watchListIndexClose
-                        val watchListDifference = myApp.watchListDifference
-                        watchListIndexClose.clear()
-                        watchListDifference.clear()
-                        for (i in 0 until watchList.size) {
-                            val watchListIndexNum = activeCompanyName.indexOf(watchList[i])
-                            if (watchListIndexNum != -1) {
-                                watchListIndexClose.add(onTheDayIndexClose[watchListIndexNum])
-                                watchListDifference.add(difference[watchListIndexNum])
-                            }
-                        }
                         navController.navigate("watchListScreen")
                     }
                     is Result.Failure -> {
@@ -133,7 +100,7 @@ class apiRequest {
             }
     }
 
-    fun TradingCalender(context: Context){
+    fun TradingCalender(context: Context) {
         //休日に対応するため5日間分のカレンダーを取得
         val today = LocalDateTime.now()
         val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
@@ -160,13 +127,13 @@ class apiRequest {
 
                     //営業日の登録
                     val referenceDate = mutableListOf<String>()
-                    if(tradingCalendar != null){
-                        for(i in 5 downTo 0){
-                            if(tradingCalendar[i].HolidayDivision == "1"){
+                    if (tradingCalendar != null) {
+                        for (i in 5 downTo 0) {
+                            if (tradingCalendar[i].HolidayDivision == "1") {
                                 referenceDate.add(tradingCalendar[i].Date)
                             }
                             //2営業日リスト追加できたらループからはずれる
-                            if (referenceDate.size == 2){
+                            if (referenceDate.size == 2) {
                                 break
                             }
                         }
@@ -181,54 +148,10 @@ class apiRequest {
         }
     }
 
-    fun RequestData(day: String, indexCloseList: MutableList<String>, activeCompanyName: MutableList<String>, codeList: MutableList<String>, context: Context) {
-        val stockCode = myApp.stockCode
-        val companyName = myApp.companyName
-        val idToken = myApp.idToken
-        val header = mapOf("Authorization" to idToken)
-
-        runBlocking {
-            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$day"
-                .httpGet()
-                .header(header)
-                .awaitStringResponseResult()
-            result.fold(
-                {
-                    val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
-                    val res = String(response.body().toByteArray())
-                    val data = dailyQuotesAdapter.fromJson(res)
-                    val dataQuotes = data?.daily_quotes
-
-                    indexCloseList.clear()
-                    activeCompanyName.clear()
-                    codeList.clear()
-                    if (dataQuotes != null) {
-                        for (i in dataQuotes.indices) {
-                            codeList.add(dataQuotes[i].Code)
-                            indexCloseList.add(dataQuotes[i].Close.toString())
-                        }
-                        for(i in 0 until codeList.size) {
-                            if (stockCode.contains(codeList[i])){
-                                val indexNum = stockCode.indexOf(codeList[i])
-                                activeCompanyName.add(companyName[indexNum])
-                            } else {
-                                activeCompanyName.add("-")
-                            }
-                        }
-                    }
-                },
-                {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
-            )
-        }
-    }
-
     fun RequestCompanyName(context: Context) {
         val idToken = myApp.idToken
         val header = mapOf("Authorization" to idToken)
-        val companyName = myApp.companyName
-        val stockCode = myApp.stockCode
+        val companyData = myApp.companyData
         val TradingCalender = myApp.referenceDate
         val referenceDate = TradingCalender.replace("-", "")
 
@@ -244,18 +167,56 @@ class apiRequest {
                     val data = infoAdapter.fromJson(res)
                     val info = data?.info
 
-                    companyName.clear()
-                    stockCode.clear()
+                    companyData.clear()
                     if (info != null) {
-                        for (i in info.indices) {
-                            companyName.add(info[i].CompanyName)
-                            stockCode.add(info[i].Code)
+                        for (index in info.indices) {
+                            companyData.add(CompanyData(info[index].CompanyName, info[index].Code))
                         }
                     }
                 },
                 {
                     Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
+                }
+            )
+        }
+    }
 
+    fun RequestData(
+        day: String,
+        companyData: MutableList<CompanyData>,
+        context: Context
+    ) {
+        val idToken = myApp.idToken
+        val header = mapOf("Authorization" to idToken)
+
+        runBlocking {
+            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$day"
+                .httpGet()
+                .header(header)
+                .awaitStringResponseResult()
+            result.fold(
+                {
+                    val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
+                    val res = String(response.body().toByteArray())
+                    val data = dailyQuotesAdapter.fromJson(res)
+                    val dataQuotes = data?.daily_quotes
+
+                    if (dataQuotes != null) {
+                        for (data in companyData) {
+                            for (requestData in dataQuotes) {
+                                if (data.stockCode == requestData.Code ) {
+                                    if (day == myApp.referenceDate) {
+                                        data.onTheDayIndexClose = requestData.Close
+                                    } else {
+                                        data.theDayBeforeIndexClose = requestData.Close
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
                 }
             )
         }

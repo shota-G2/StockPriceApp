@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,14 +43,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
-import java.util.Collections
+import io.realm.Realm
+import io.realm.kotlin.where
 import kotlin.math.round
+
+val myApp = MyApp.getInstance()
+val companyData = myApp.companyData
+val watchListData = myApp.watchListData
+val referenceDate = myApp.referenceDate.replace("-", "/")
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -122,12 +125,15 @@ fun WatchList(navController: NavController) {
             }
         }
 
-        val myApp = MyApp.getInstance()
-        val watchList = myApp.watchList
-        val watchListIndexClose = myApp.watchListIndexClose
-        val watchListDifference = myApp.watchListDifference
-        val referenceDate = myApp.referenceDate.replace("-", "/")
-
+        //端末DBからグローバル変数に格納
+        val realm = Realm.getDefaultInstance()
+        watchListData.clear()
+        realm.use { realm ->
+            val result = realm.where<RegisteredIndexList>().findAll()
+            for (item in result){
+                watchListData.add(WatchCompanyData(item?.registeredIndexList.toString()))
+            }
+        }
 
         Column(modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.End
@@ -142,23 +148,31 @@ fun WatchList(navController: NavController) {
             .fillMaxSize()
             .size(630.dp)
         ) {
-            itemsIndexed(watchList){ indexNum, watchList ->
-                //小数点第二位以下四捨五入
-                val indexClose = if(onTheDayIndexClose[indexNum] != "-") {
-                    (round(watchListIndexClose[indexNum].toDouble() * 100) / 100).toString()
-                } else {
-                    watchListIndexClose[indexNum]
+            itemsIndexed(watchListData){ indexNum, list ->
+                for (companyData in myApp.companyData) {
+                    for (listData in myApp.watchListData) {
+                        if (companyData.companyName == listData.companyName) {
+                            listData.onTheDayIndexClose = companyData.onTheDayIndexClose
+                            listData.theDayBeforeIndexClose = companyData.theDayBeforeIndexClose
+                        }
+                    }
                 }
-                val difference = if(watchListDifference[indexNum] != "-") {
-                    (round(watchListDifference[indexNum].toDouble() * 10) / 10).toString()
+                val indexClose = if (list.onTheDayIndexClose != null) {
+                    (round(list.onTheDayIndexClose!! * 100) / 100).toString()
                 } else {
-                    watchListIndexClose[indexNum]
+                    "-"
                 }
+                val difference = if (list.onTheDayIndexClose != null || list.theDayBeforeIndexClose != null) {
+                    (round((list.onTheDayIndexClose!! - list.theDayBeforeIndexClose!!) * 100) / 100).toString()
+                } else {
+                    "-"
+                }
+
                 Row(verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            navController.navigate("indexDetail/$watchList/$indexClose/$difference")
+                            navController.navigate("indexDetail/${list.companyName}/$indexClose/$difference")
                         }
                 ){
                     Box {
@@ -171,9 +185,8 @@ fun WatchList(navController: NavController) {
                                 .size(65.dp)
                         )
 
-                        Collections.replaceAll(watchListIndexClose, "null", "-")
                         Column {
-                            Text(text = watchList,
+                            Text(text = list.companyName,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 15.sp,
@@ -207,8 +220,8 @@ fun WatchList(navController: NavController) {
                                 Text(
                                     difference,
                                     fontSize = 20.sp,
-                                    color = if (watchListDifference[indexNum] != "-"){
-                                        if (watchListDifference[indexNum].toFloat() >= 0) {Color.Green } else {Color.Red}
+                                    color = if (difference != "-"){
+                                        if (difference.toFloat() >= 0) {Color.Green } else {Color.Red}
                                     } else {
                                         Color.White
                                     },
@@ -295,6 +308,10 @@ fun MainMenu(navController: NavController) {
             }
         }
     )
+}
+
+fun setIndexClose() {
+
 }
 
 //@RequiresApi(Build.VERSION_CODES.O)
