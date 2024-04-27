@@ -120,7 +120,7 @@ fun SerchList(
                             changedList.add(item)
                         }
                     }
-                    changedListFlg = 1
+                    changedListFlg += 1
                 } else {
                     changedListFlg = 0
                 }
@@ -220,19 +220,8 @@ fun SerchList(
                 }
             }
         } else {
-            itemsIndexed(changedList){ indexNum, list ->
-                val serchedIndexClose = list.onTheDayIndexClose
-                val  serchedTheDayBeforeIndexClose = list.theDayBeforeIndexClose
-                val indexClose = if (serchedIndexClose != null) {
-                    (round(serchedIndexClose!! * 100) / 100).toString()
-                } else {
-                    "-"
-                }
-                val difference = if (serchedIndexClose != null || serchedTheDayBeforeIndexClose != null) {
-                    (round((serchedIndexClose!! - serchedTheDayBeforeIndexClose!!) * 100) / 100).toString()
-                } else {
-                    "-"
-                }
+            itemsIndexed(changedList){ _, list ->
+                val (indexClose, difference) = setDisplayData(list.onTheDayIndexClose, list.theDayBeforeIndexClose)
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

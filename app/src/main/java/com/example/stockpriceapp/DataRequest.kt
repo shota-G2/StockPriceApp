@@ -16,8 +16,9 @@ import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 class apiRequest {
-    val myApp = MyApp.getInstance()
-    val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+    private val myApp = MyApp.getInstance()
+    private val companyData = myApp.companyData
+    private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
     fun getRefreshToken(
         context: Context,
@@ -37,13 +38,11 @@ class apiRequest {
             .response { _, response, result ->
                 when (result) {
                     is Result.Success -> {
-                        val refreshTokenResultAdapter =
-                            moshi.adapter(resultRefreshToken::class.java)
+                        val refreshTokenResultAdapter = moshi.adapter(resultRefreshToken::class.java)
                         val data = String(response.body().toByteArray())
 
                         //変数refreshTokenにAPIから返ってきたrefreshTokenを格納する
-                        myApp.refreshToken =
-                            refreshTokenResultAdapter.fromJson(data)?.refreshToken.toString()
+                        myApp.refreshToken = refreshTokenResultAdapter.fromJson(data)?.refreshToken.toString()
 
                         //idToken取得
                         val apiRequest = apiRequest()
@@ -61,7 +60,6 @@ class apiRequest {
         navController: NavController
     ) {
         val getIdTokenUrl = context.getString(R.string.getIdTokenUrl) + myApp.refreshToken
-        val companyData = myApp.companyData
         val apiRequest = apiRequest()
 
         Fuel.post(getIdTokenUrl)
@@ -71,17 +69,19 @@ class apiRequest {
                         val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
                         val res = String(response.body().toByteArray())
                         myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
+                        val header = mapOf("Authorization" to myApp.idToken)
 
                         //営業日判定
-                        apiRequest.TradingCalender(context)
+                        apiRequest.TradingCalender(header, context)
 
                         // 全企業名取得
-                        apiRequest.RequestCompanyName(context)
+                        apiRequest.RequestCompanyName(header, context)
 
                         //対象日の終値取得（無料版の仕様により本日から84日前）
                         apiRequest.RequestData(
                             myApp.referenceDate,
                             companyData,
+                            header,
                             context
                         )
 
@@ -89,6 +89,7 @@ class apiRequest {
                         apiRequest.RequestData(
                             myApp.previousBusinessDay,
                             companyData,
+                            header,
                             context
                         )
                         navController.navigate("watchListScreen")
@@ -100,16 +101,15 @@ class apiRequest {
             }
     }
 
-    fun TradingCalender(context: Context) {
+    fun TradingCalender(
+        header: Map<String, String>,
+        context: Context
+    ) {
         //休日に対応するため5日間分のカレンダーを取得
         val today = LocalDateTime.now()
         val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
         val toDay = today.minusDays(84).format(dtFormat)
         val fromDay = today.minusDays(89).format((dtFormat))
-
-        //header設定
-        val idToken = myApp.idToken
-        val header = mapOf("Authorization" to idToken)
 
         runBlocking {
             val (_, response, result) =
@@ -148,10 +148,10 @@ class apiRequest {
         }
     }
 
-    fun RequestCompanyName(context: Context) {
-        val idToken = myApp.idToken
-        val header = mapOf("Authorization" to idToken)
-        val companyData = myApp.companyData
+    fun RequestCompanyName(
+        header: Map<String, String>,
+        context: Context
+    ) {
         val TradingCalender = myApp.referenceDate
         val referenceDate = TradingCalender.replace("-", "")
 
@@ -169,8 +169,8 @@ class apiRequest {
 
                     companyData.clear()
                     if (info != null) {
-                        for (index in info.indices) {
-                            companyData.add(CompanyData(info[index].CompanyName, info[index].Code))
+                        for (data in info) {
+                            companyData.add(CompanyData(data.CompanyName, data.Code))
                         }
                     }
                 },
@@ -184,11 +184,9 @@ class apiRequest {
     fun RequestData(
         day: String,
         companyData: MutableList<CompanyData>,
+        header: Map<String, String>,
         context: Context
     ) {
-        val idToken = myApp.idToken
-        val header = mapOf("Authorization" to idToken)
-
         runBlocking {
             val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$day"
                 .httpGet()
@@ -203,12 +201,12 @@ class apiRequest {
 
                     if (dataQuotes != null) {
                         for (data in companyData) {
-                            for (requestData in dataQuotes) {
-                                if (data.stockCode == requestData.Code ) {
+                            for (responseData in dataQuotes) {
+                                if (data.stockCode == responseData.Code ) {
                                     if (day == myApp.referenceDate) {
-                                        data.onTheDayIndexClose = requestData.Close
+                                        data.onTheDayIndexClose = responseData.Close
                                     } else {
-                                        data.theDayBeforeIndexClose = requestData.Close
+                                        data.theDayBeforeIndexClose = responseData.Close
                                     }
                                 }
                             }
