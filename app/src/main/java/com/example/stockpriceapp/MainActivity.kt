@@ -3,8 +3,6 @@ package com.example.stockpriceapp
 
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings.Global.getString
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -42,13 +40,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
-import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.result.Result
-import com.squareup.moshi.KotlinJsonAdapterFactory
-import com.squareup.moshi.Moshi
 import io.realm.Realm
 import io.realm.RealmConfiguration
-import io.realm.kotlin.where
 
 
 class MainActivity : ComponentActivity() {
@@ -141,7 +134,7 @@ fun LoginScreen(navController: NavController){
                             editable = true
 
                             // refreshToken取得～リスト取得
-                            val apiRequest = apiRequest()
+                            val apiRequest = ApiRequest()
                             apiRequest.getRefreshToken(context, navController)
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),

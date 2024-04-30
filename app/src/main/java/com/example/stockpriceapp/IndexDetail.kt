@@ -69,10 +69,11 @@ fun IndexDetail(navController: NavController, companyName: String, indexClose: S
     //リスト登録ボタン表示
     var buttonText = ""
     for (watchList in myApp.watchListData) {
-        buttonText = if (watchList.companyName == companyName) {
-            "解除"
+        if (watchList.companyName == companyName) {
+            buttonText = "解除"
+            break
         } else {
-            "登録"
+            buttonText = "登録"
         }
     }
 

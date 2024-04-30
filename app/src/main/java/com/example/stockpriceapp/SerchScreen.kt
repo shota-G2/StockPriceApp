@@ -63,7 +63,6 @@ fun SerchScreen(navController: NavController){
                     .background(Color.Black)
                     .fillMaxSize()
             ) {
-                val displayList by remember { mutableStateOf(companyData) }
                 Column {
                     TopBar("検索")
                 }
@@ -71,7 +70,7 @@ fun SerchScreen(navController: NavController){
                     modifier = Modifier
                         .weight(1f)
                 ){
-                    SerchList(navController, displayList)
+                    SerchList(navController)
                 }
                 Column(
                     verticalArrangement = Arrangement.Bottom
@@ -87,7 +86,6 @@ fun SerchScreen(navController: NavController){
 @Composable
 fun SerchList(
     navController: NavController,
-    companyData: MutableList<CompanyData>
 ){
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current

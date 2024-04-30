@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
-class apiRequest {
+class ApiRequest {
     private val myApp = MyApp.getInstance()
     private val companyData = myApp.companyData
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -45,7 +45,7 @@ class apiRequest {
                         myApp.refreshToken = refreshTokenResultAdapter.fromJson(data)?.refreshToken.toString()
 
                         //idToken取得
-                        val apiRequest = apiRequest()
+                        val apiRequest = ApiRequest()
                         apiRequest.getIdToken(context, navController)
                     }
                     is Result.Failure -> {
@@ -60,7 +60,7 @@ class apiRequest {
         navController: NavController
     ) {
         val getIdTokenUrl = context.getString(R.string.getIdTokenUrl) + myApp.refreshToken
-        val apiRequest = apiRequest()
+        val apiRequest = ApiRequest()
 
         Fuel.post(getIdTokenUrl)
             .response { _, response, result ->
@@ -72,10 +72,91 @@ class apiRequest {
                         val header = mapOf("Authorization" to myApp.idToken)
 
                         //営業日判定
-                        apiRequest.TradingCalender(header, context)
+                        apiRequest.TradingCalender(header, context, navController)
+                    }
+                    is Result.Failure -> {
+                        Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+    }
+
+    fun TradingCalender(
+        header: Map<String, String>,
+        context: Context,
+        navController: NavController
+    ) {
+        //休日に対応するため5日間分のカレンダーを取得
+        val today = LocalDateTime.now()
+        val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
+        val toDay = today.minusDays(84).format(dtFormat)
+        val fromDay = today.minusDays(89).format((dtFormat))
+
+        val apiRequest = ApiRequest()
+
+        Fuel.get("https://api.jquants.com/v1/markets/trading_calendar?from=$fromDay&to=$toDay")
+            .header(header)
+            .response { _, response, result ->
+                when(result) {
+                    is Result.Success -> {
+                        //取得データを格納
+                        val holidayDivisionAdapter = moshi.adapter(HolidayDivision::class.java)
+                        val res = String(response.body().toByteArray())
+                        val data = holidayDivisionAdapter.fromJson(res)
+                        val tradingCalendar = data?.trading_calendar
+
+                        //営業日の登録
+                        val referenceDate = mutableListOf<String>()
+                        if (tradingCalendar != null) {
+                            for (i in 5 downTo 0) {
+                                if (tradingCalendar[i].HolidayDivision == "1") {
+                                    referenceDate.add(tradingCalendar[i].Date)
+                                }
+                                //2営業日リスト追加できたらループからはずれる
+                                if (referenceDate.size == 2) {
+                                    break
+                                }
+                            }
+                            myApp.referenceDate = referenceDate[0]
+                            myApp.previousBusinessDay = referenceDate[1]
+                        }
 
                         // 全企業名取得
-                        apiRequest.RequestCompanyName(header, context)
+                        apiRequest.RequestCompanyName(header, context, navController)
+                    }
+                    is Result.Failure -> {
+                        Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
+                    }
+                }
+        }
+    }
+
+    fun RequestCompanyName(
+        header: Map<String, String>,
+        context: Context,
+        navController: NavController
+    ) {
+        val TradingCalender = myApp.referenceDate
+        val referenceDate = TradingCalender.replace("-", "")
+
+        Fuel.get("https://api.jquants.com/v1/listed/info?date=$referenceDate")
+            .header(header)
+            .response { _, response, result ->
+                when(result) {
+                    is Result.Success -> {
+                        val infoAdapter = moshi.adapter(Info::class.java)
+                        val res = String(response.body().toByteArray())
+                        val data = infoAdapter.fromJson(res)
+                        val info = data?.info
+
+                        companyData.clear()
+                        if (info != null) {
+                            for (data in info) {
+                                companyData.add(CompanyData(data.CompanyName, data.Code))
+                            }
+                        }
+
+                        val apiRequest = ApiRequest()
 
                         //対象日の終値取得（無料版の仕様により本日から84日前）
                         apiRequest.RequestData(
@@ -90,94 +171,14 @@ class apiRequest {
                             myApp.previousBusinessDay,
                             companyData,
                             header,
-                            context
+                            context,
+                            navController
                         )
-                        navController.navigate("watchListScreen")
                     }
                     is Result.Failure -> {
                         Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
                     }
                 }
-            }
-    }
-
-    fun TradingCalender(
-        header: Map<String, String>,
-        context: Context
-    ) {
-        //休日に対応するため5日間分のカレンダーを取得
-        val today = LocalDateTime.now()
-        val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
-        val toDay = today.minusDays(84).format(dtFormat)
-        val fromDay = today.minusDays(89).format((dtFormat))
-
-        runBlocking {
-            val (_, response, result) =
-                "https://api.jquants.com/v1/markets/trading_calendar?from=$fromDay&to=$toDay"
-                    .httpGet()
-                    .header(header)
-                    .awaitStringResponseResult()
-            result.fold(
-                {
-                    //取得データを格納
-                    val holidayDivisionAdapter = moshi.adapter(HolidayDivision::class.java)
-                    val res = String(response.body().toByteArray())
-                    val data = holidayDivisionAdapter.fromJson(res)
-                    val tradingCalendar = data?.trading_calendar
-
-                    //営業日の登録
-                    val referenceDate = mutableListOf<String>()
-                    if (tradingCalendar != null) {
-                        for (i in 5 downTo 0) {
-                            if (tradingCalendar[i].HolidayDivision == "1") {
-                                referenceDate.add(tradingCalendar[i].Date)
-                            }
-                            //2営業日リスト追加できたらループからはずれる
-                            if (referenceDate.size == 2) {
-                                break
-                            }
-                        }
-                        myApp.referenceDate = referenceDate[0]
-                        myApp.previousBusinessDay = referenceDate[1]
-                    }
-                },
-                {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
-            )
-        }
-    }
-
-    fun RequestCompanyName(
-        header: Map<String, String>,
-        context: Context
-    ) {
-        val TradingCalender = myApp.referenceDate
-        val referenceDate = TradingCalender.replace("-", "")
-
-        runBlocking {
-            val (_, response, result) = "https://api.jquants.com/v1/listed/info?date=$referenceDate"
-                .httpGet()
-                .header(header)
-                .awaitStringResponseResult()
-            result.fold(
-                {
-                    val infoAdapter = moshi.adapter(Info::class.java)
-                    val res = String(response.body().toByteArray())
-                    val data = infoAdapter.fromJson(res)
-                    val info = data?.info
-
-                    companyData.clear()
-                    if (info != null) {
-                        for (data in info) {
-                            companyData.add(CompanyData(data.CompanyName, data.Code))
-                        }
-                    }
-                },
-                {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
-            )
         }
     }
 
@@ -185,38 +186,38 @@ class apiRequest {
         day: String,
         companyData: MutableList<CompanyData>,
         header: Map<String, String>,
-        context: Context
+        context: Context,
+        navController: NavController? = null
     ) {
-        runBlocking {
-            val (_, response, result) = "https://api.jquants.com/v1/prices/daily_quotes?date=$day"
-                .httpGet()
-                .header(header)
-                .awaitStringResponseResult()
-            result.fold(
-                {
-                    val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
-                    val res = String(response.body().toByteArray())
-                    val data = dailyQuotesAdapter.fromJson(res)
-                    val dataQuotes = data?.daily_quotes
+        Fuel.get("https://api.jquants.com/v1/prices/daily_quotes?date=$day")
+            .header(header)
+            .response { _, response, result ->
+                when(result) {
+                    is Result.Success -> {
+                        val dailyQuotesAdapter = moshi.adapter(DailyQuotes::class.java)
+                        val res = String(response.body().toByteArray())
+                        val data = dailyQuotesAdapter.fromJson(res)
+                        val dataQuotes = data?.daily_quotes
 
-                    if (dataQuotes != null) {
-                        for (data in companyData) {
-                            for (responseData in dataQuotes) {
-                                if (data.stockCode == responseData.Code ) {
-                                    if (day == myApp.referenceDate) {
-                                        data.onTheDayIndexClose = responseData.Close
-                                    } else {
-                                        data.theDayBeforeIndexClose = responseData.Close
+                        if (dataQuotes != null) {
+                            for (data in companyData) {
+                                for (responseData in dataQuotes) {
+                                    if (data.stockCode == responseData.Code ) {
+                                        if (day == myApp.referenceDate) {
+                                            data.onTheDayIndexClose = responseData.Close
+                                        } else {
+                                            data.theDayBeforeIndexClose = responseData.Close
+                                        }
                                     }
                                 }
                             }
                         }
+                        navController?.navigate("watchListScreen")
                     }
-                },
-                {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
+                    is Result.Failure -> {
+                        Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
+                    }
                 }
-            )
         }
     }
 }
