@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,8 +133,8 @@ fun LoginScreen(navController: NavController){
                             editable = true
 
                             // refreshToken取得～リスト取得
-                            val apiRequest = ApiRequest()
-                            apiRequest.getRefreshToken(context, navController)
+                            val dataRequest = DataRequest()
+                            dataRequest.getRefreshToken(context, navController)
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),
                         modifier = Modifier.padding(top = 10.dp, start = 230.dp)
@@ -143,7 +142,7 @@ fun LoginScreen(navController: NavController){
                         Text(text = "ログイン")
                     }
 
-                    AnimatedVisibility(visible = editable) {
+                    if(editable) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center

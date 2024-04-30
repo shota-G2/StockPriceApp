@@ -5,17 +5,14 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.navigation.NavController
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
-import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
 import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
-class ApiRequest {
+class DataRequest {
     private val myApp = MyApp.getInstance()
     private val companyData = myApp.companyData
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -45,8 +42,8 @@ class ApiRequest {
                         myApp.refreshToken = refreshTokenResultAdapter.fromJson(data)?.refreshToken.toString()
 
                         //idToken取得
-                        val apiRequest = ApiRequest()
-                        apiRequest.getIdToken(context, navController)
+                        val dataRequest = DataRequest()
+                        dataRequest.getIdToken(context, navController)
                     }
                     is Result.Failure -> {
                         Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
@@ -55,12 +52,12 @@ class ApiRequest {
             }
     }
 
-    fun getIdToken(
+    private fun getIdToken(
         context: Context,
         navController: NavController
     ) {
         val getIdTokenUrl = context.getString(R.string.getIdTokenUrl) + myApp.refreshToken
-        val apiRequest = ApiRequest()
+        val dataRequest = DataRequest()
 
         Fuel.post(getIdTokenUrl)
             .response { _, response, result ->
@@ -72,7 +69,7 @@ class ApiRequest {
                         val header = mapOf("Authorization" to myApp.idToken)
 
                         //営業日判定
-                        apiRequest.TradingCalender(header, context, navController)
+                        dataRequest.tradingCalender(header, context, navController)
                     }
                     is Result.Failure -> {
                         Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
@@ -81,7 +78,7 @@ class ApiRequest {
             }
     }
 
-    fun TradingCalender(
+    private fun tradingCalender(
         header: Map<String, String>,
         context: Context,
         navController: NavController
@@ -92,7 +89,7 @@ class ApiRequest {
         val toDay = today.minusDays(84).format(dtFormat)
         val fromDay = today.minusDays(89).format((dtFormat))
 
-        val apiRequest = ApiRequest()
+        val dataRequest = DataRequest()
 
         Fuel.get("https://api.jquants.com/v1/markets/trading_calendar?from=$fromDay&to=$toDay")
             .header(header)
@@ -122,7 +119,7 @@ class ApiRequest {
                         }
 
                         // 全企業名取得
-                        apiRequest.RequestCompanyName(header, context, navController)
+                        dataRequest.requestCompanyName(header, context, navController)
                     }
                     is Result.Failure -> {
                         Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
@@ -131,7 +128,7 @@ class ApiRequest {
         }
     }
 
-    fun RequestCompanyName(
+    private fun requestCompanyName(
         header: Map<String, String>,
         context: Context,
         navController: NavController
@@ -156,10 +153,10 @@ class ApiRequest {
                             }
                         }
 
-                        val apiRequest = ApiRequest()
+                        val dataRequest = DataRequest()
 
                         //対象日の終値取得（無料版の仕様により本日から84日前）
-                        apiRequest.RequestData(
+                        dataRequest.requestCompanyData(
                             myApp.referenceDate,
                             companyData,
                             header,
@@ -167,7 +164,7 @@ class ApiRequest {
                         )
 
                         //対象日前日の終値取得
-                        apiRequest.RequestData(
+                        dataRequest.requestCompanyData(
                             myApp.previousBusinessDay,
                             companyData,
                             header,
@@ -182,7 +179,7 @@ class ApiRequest {
         }
     }
 
-    fun RequestData(
+    private fun requestCompanyData(
         day: String,
         companyData: MutableList<CompanyData>,
         header: Map<String, String>,
