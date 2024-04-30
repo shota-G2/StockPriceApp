@@ -109,9 +109,6 @@ fun TopBar(text: String){
 @Composable
 fun WatchList(navController: NavController) {
     val context = LocalContext.current
-    var companyData: MutableList<CompanyData> by remember {
-        mutableStateOf(myApp.companyData)
-    }
     Column(
         modifier = Modifier
             .fillMaxSize()

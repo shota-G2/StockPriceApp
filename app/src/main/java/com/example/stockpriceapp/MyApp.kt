@@ -1,8 +1,6 @@
 package com.example.stockpriceapp
 
 import android.app.Application
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 
 class MyApp: Application() {
     //refreshToken
