@@ -41,6 +41,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.stockpriceapp.ui.theme.StockPriceAppTheme
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -74,7 +78,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 // ログイン画面
 fun LoginScreen(navController: NavController){
@@ -132,9 +136,15 @@ fun LoginScreen(navController: NavController){
                             // インジケータ表示フラグ
                             editable = true
 
-                            // refreshToken取得～リスト取得
-                            val dataRequest = DataRequest()
-                            dataRequest.getRefreshToken(context, navController)
+                            GlobalScope.launch {
+                                // refreshToken取得～リスト取得
+                                val dataRequest = DataRequest()
+                                dataRequest.getRefreshToken(context, navController)
+
+                                GlobalScope.launch(Dispatchers.Main) {
+                                    navController?.navigate("watchListScreen")
+                                }
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),
                         modifier = Modifier.padding(top = 10.dp, start = 230.dp)
