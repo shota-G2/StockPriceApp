@@ -139,7 +139,20 @@ fun LoginScreen(navController: NavController){
                             GlobalScope.launch {
                                 // refreshToken取得～リスト取得
                                 val dataRequest = DataRequest()
-                                dataRequest.getRefreshToken(context, navController)
+
+                                dataRequest.getRefreshToken(context)
+
+                                dataRequest.getIdToken(context)
+                                //営業日判定
+                                dataRequest.tradingCalender(context)
+
+                                dataRequest.requestCompanyName(context)
+
+                                //対象日の終値取得（無料版の仕様により本日から84日前）
+                                dataRequest.requestCompanyData(myApp.referenceDate, context)
+
+                                //対象日前日の終値取得
+                                dataRequest.requestCompanyData(myApp.previousBusinessDay, context)
 
                                 GlobalScope.launch(Dispatchers.Main) {
                                     navController?.navigate("watchListScreen")

@@ -26,10 +26,7 @@ class DataRequest {
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
     @OptIn(DelicateCoroutinesApi::class)
-    fun getRefreshToken(
-        context: Context,
-        navController: NavController
-    ) {
+    fun getRefreshToken(context: Context) {
         //moshi,adapter設定
         val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
         val parameter = Parameter(
@@ -52,10 +49,6 @@ class DataRequest {
 
                 //変数refreshTokenにAPIから返ってきたrefreshTokenを格納する
                 myApp.refreshToken = refreshTokenResultAdapter.fromJson(data)?.refreshToken.toString()
-
-                //idToken取得
-                val dataRequest = DataRequest()
-                dataRequest.getIdToken(context, navController)
             }
             is Result.Failure -> {
                 GlobalScope.launch(Dispatchers.Main) {
@@ -66,10 +59,7 @@ class DataRequest {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    fun getIdToken(
-        context: Context,
-        navController: NavController
-    ) {
+    fun getIdToken(context: Context) {
         val getIdTokenUrl = context.getString(R.string.getIdTokenUrl) + myApp.refreshToken
         val dataRequest = DataRequest()
 
@@ -83,14 +73,6 @@ class DataRequest {
                 val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
                 val res = String(response.body().toByteArray())
                 myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
-                val header = mapOf("Authorization" to myApp.idToken)
-
-                //営業日判定
-                dataRequest.tradingCalender(
-                    header,
-                    context,
-                    navController
-                )
             }
             is Result.Failure -> {
                 GlobalScope.launch(Dispatchers.Main) {
@@ -101,16 +83,13 @@ class DataRequest {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    fun tradingCalender(
-        header: Map<String, String>,
-        context: Context,
-        navController: NavController
-    ) {
+    fun tradingCalender(context: Context) {
         //休日に対応するため5日間分のカレンダーを取得
         val today = LocalDateTime.now()
         val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
         val toDay = today.minusDays(84).format(dtFormat)
         val fromDay = today.minusDays(89).format((dtFormat))
+        val header = mapOf("Authorization" to myApp.idToken)
 
         val (_, response, result) =
             "https://api.jquants.com/v1/markets/trading_calendar?from=$fromDay&to=$toDay"
@@ -141,13 +120,6 @@ class DataRequest {
                 }
                 myApp.referenceDate = referenceDate[0]
                 myApp.previousBusinessDay = referenceDate[1]
-
-                val dataRequest = DataRequest()
-                dataRequest.requestCompanyName(
-                    header,
-                    context,
-                    navController
-                )
             }
             is Result.Failure -> {
                 //todo クラッシュする
@@ -159,13 +131,10 @@ class DataRequest {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    fun requestCompanyName(
-        header: Map<String, String>,
-        context: Context,
-        navController: NavController
-    ) {
+    fun requestCompanyName(context: Context) {
         val TradingCalender = myApp.referenceDate
         val referenceDate = TradingCalender.replace("-", "")
+        val header = mapOf("Authorization" to myApp.idToken)
 
         val (_, response, result) =
             "https://api.jquants.com/v1/listed/info?date=$referenceDate"
@@ -186,23 +155,6 @@ class DataRequest {
                         companyData.add(CompanyData(data.CompanyName, data.Code))
                     }
                 }
-
-                val dataRequest = DataRequest()
-                //対象日の終値取得（無料版の仕様により本日から84日前）
-                dataRequest.requestCompanyData(
-                    myApp.referenceDate,
-                    companyData,
-                    header,
-                    context
-                )
-
-                //対象日前日の終値取得
-                dataRequest.requestCompanyData(
-                    myApp.previousBusinessDay,
-                    companyData,
-                    header,
-                    context
-                )
             }
             is Result.Failure -> {
                 GlobalScope.launch(Dispatchers.Main) {
@@ -215,10 +167,9 @@ class DataRequest {
     @OptIn(DelicateCoroutinesApi::class)
     fun requestCompanyData(
         day: String,
-        companyData: MutableList<CompanyData>,
-        header: Map<String, String>,
         context: Context
     ) {
+        val header = mapOf("Authorization" to myApp.idToken)
         val (_, response, result) =
             "https://api.jquants.com/v1/prices/daily_quotes?date=$day"
                 .httpGet()
