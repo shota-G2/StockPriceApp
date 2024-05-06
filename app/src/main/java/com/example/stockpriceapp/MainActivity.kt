@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,9 +22,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -81,14 +84,15 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 // ログイン画面
-fun LoginScreen(navController: NavController){
+fun LoginScreen(navController: NavController, viewModel: DataRequest = androidx.lifecycle.viewmodel.compose.viewModel()){
     StockPriceAppTheme {
         //A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            var editable by remember { mutableStateOf(false) }
+            val editable by viewModel.editable.observeAsState()
+            val showDialog by viewModel.showDialog.observeAsState()
             val context = LocalContext.current
 
             Box(modifier = Modifier.fillMaxSize()){
@@ -134,29 +138,11 @@ fun LoginScreen(navController: NavController){
                     Button(
                         onClick = {
                             // インジケータ表示フラグ
-                            editable = true
+                            viewModel.editable.postValue(true)
 
                             GlobalScope.launch {
                                 // refreshToken取得～リスト取得
-                                val dataRequest = DataRequest()
-
-                                dataRequest.getRefreshToken(context)
-
-                                dataRequest.getIdToken(context)
-                                //営業日判定
-                                dataRequest.tradingCalender(context)
-
-                                dataRequest.requestCompanyName(context)
-
-                                //対象日の終値取得（無料版の仕様により本日から84日前）
-                                dataRequest.requestCompanyData(myApp.referenceDate, context)
-
-                                //対象日前日の終値取得
-                                dataRequest.requestCompanyData(myApp.previousBusinessDay, context)
-
-                                GlobalScope.launch(Dispatchers.Main) {
-                                    navController?.navigate("watchListScreen")
-                                }
+                                viewModel.getRefreshToken(context, navController)
                             }
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),
@@ -165,13 +151,34 @@ fun LoginScreen(navController: NavController){
                         Text(text = "ログイン")
                     }
 
-                    if(editable) {
+                    if(editable!!) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             SimpleProgress()
                         }
+                    }
+
+                    if (showDialog!!) {
+                        AlertDialog(
+                            onDismissRequest = {
+                            },
+                            confirmButton = {
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        viewModel.showDialog.postValue(false)
+                                    }
+                                ) {
+                                    Text(context.getString(R.string.close))
+                                }
+                            },
+                            text = {
+                                Text(context.getString(R.string.errorText))
+                            }
+                        )
                     }
                 }
             }

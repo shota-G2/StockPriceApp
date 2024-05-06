@@ -1,11 +1,10 @@
 package com.example.stockpriceapp
 import android.content.Context
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
-import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
@@ -15,18 +14,18 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
-class DataRequest {
+class DataRequest: ViewModel() {
     private val myApp = MyApp.getInstance()
     private val companyData = myApp.companyData
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+    val showDialog = MutableLiveData(false)
+    val editable = MutableLiveData(false)
 
-    @OptIn(DelicateCoroutinesApi::class)
-    fun getRefreshToken(context: Context) {
+    fun getRefreshToken(context: Context, navController: NavController) {
         //moshi,adapter設定
         val refreshTokenRequestAdapter = moshi.adapter(Parameter::class.java)
         val parameter = Parameter(
@@ -49,19 +48,18 @@ class DataRequest {
 
                 //変数refreshTokenにAPIから返ってきたrefreshTokenを格納する
                 myApp.refreshToken = refreshTokenResultAdapter.fromJson(data)?.refreshToken.toString()
+
+                getIdToken(context, navController)
             }
             is Result.Failure -> {
-                GlobalScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
+                showDialog.postValue(true)
+                editable.postValue(false)
             }
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    fun getIdToken(context: Context) {
+    private fun getIdToken(context: Context, navController: NavController) {
         val getIdTokenUrl = context.getString(R.string.getIdTokenUrl) + myApp.refreshToken
-        val dataRequest = DataRequest()
 
         val (_, response, result) =
             getIdTokenUrl
@@ -73,17 +71,17 @@ class DataRequest {
                 val idTokenResultAdapter = moshi.adapter(resultIdToken::class.java)
                 val res = String(response.body().toByteArray())
                 myApp.idToken = idTokenResultAdapter.fromJson(res)?.idToken.toString()
+
+                tradingCalender(navController)
             }
             is Result.Failure -> {
-                GlobalScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
+                showDialog.postValue(true)
+                editable.postValue(false)
             }
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    fun tradingCalender(context: Context) {
+    private fun tradingCalender(navController: NavController) {
         //休日に対応するため5日間分のカレンダーを取得
         val today = LocalDateTime.now()
         val dtFormat = DateTimeFormatter.ofPattern("yyyyMMdd")
@@ -107,7 +105,7 @@ class DataRequest {
 
                 //営業日の登録
                 val referenceDate = mutableListOf<String>()
-                if (tradingCalendar != null) {
+                tradingCalendar?.let {
                     for (i in 5 downTo 0) {
                         if (tradingCalendar[i].HolidayDivision == "1") {
                             referenceDate.add(tradingCalendar[i].Date)
@@ -120,20 +118,19 @@ class DataRequest {
                 }
                 myApp.referenceDate = referenceDate[0]
                 myApp.previousBusinessDay = referenceDate[1]
+
+                requestCompanyName(navController)
             }
             is Result.Failure -> {
-                //todo クラッシュする
-                GlobalScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
+                showDialog.postValue(true)
+                editable.postValue(false)
             }
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    fun requestCompanyName(context: Context) {
-        val TradingCalender = myApp.referenceDate
-        val referenceDate = TradingCalender.replace("-", "")
+    private fun requestCompanyName(navController: NavController) {
+        val tradingCalender = myApp.referenceDate
+        val referenceDate = tradingCalender.replace("-", "")
         val header = mapOf("Authorization" to myApp.idToken)
 
         val (_, response, result) =
@@ -150,25 +147,23 @@ class DataRequest {
                 val info = data?.info
 
                 companyData.clear()
-                if (info != null) {
+                info?.let {
                     for (data in info) {
                         companyData.add(CompanyData(data.CompanyName, data.Code))
                     }
                 }
+                requestCompanyData(myApp.referenceDate)
+                requestCompanyData(myApp.previousBusinessDay, navController)
             }
             is Result.Failure -> {
-                GlobalScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
+                showDialog.postValue(true)
+                editable.postValue(false)
             }
         }
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    fun requestCompanyData(
-        day: String,
-        context: Context
-    ) {
+    private fun requestCompanyData(day: String, navController: NavController? = null) {
         val header = mapOf("Authorization" to myApp.idToken)
         val (_, response, result) =
             "https://api.jquants.com/v1/prices/daily_quotes?date=$day"
@@ -183,7 +178,7 @@ class DataRequest {
                 val data = dailyQuotesAdapter.fromJson(res)
                 val dataQuotes = data?.daily_quotes
 
-                if (dataQuotes != null) {
+                dataQuotes?.let {
                     for (data in companyData) {
                         for (responseData in dataQuotes) {
                             if (data.stockCode == responseData.Code ) {
@@ -196,11 +191,14 @@ class DataRequest {
                         }
                     }
                 }
+
+                GlobalScope.launch(Dispatchers.Main) {
+                    navController?.navigate("watchListScreen")
+                }
             }
             is Result.Failure -> {
-                GlobalScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "通信エラーが発生しました", Toast.LENGTH_LONG).show()
-                }
+                showDialog.postValue(true)
+                editable.postValue(false)
             }
         }
     }
